@@ -48,11 +48,7 @@ const AppNavigator = () => {
           </>
         ) : (
           <>
-            {/* CUSTOMER SCREEN */}
-            {role === 'CUSTOMER' && (
-              <Stack.Screen name="Bottomtab" component={BottomTab} options={{ headerShown: false }} />
-            )}
-
+           
             {/* EMPLOYEE SCREEN WITH SUBROLE */}
             {role === 'EMPLOYEE' && subRole === 'DELIVERY' && (
               <>
@@ -66,7 +62,7 @@ const AppNavigator = () => {
             )}
 
             {/* FALLBACK SCREEN */}
-            {!['CUSTOMER', 'EMPLOYEE'].includes(role) && (
+            {!['EMPLOYEE'].includes(role) && (
               <Stack.Screen
                 name="Fallback"
                 component={() => (

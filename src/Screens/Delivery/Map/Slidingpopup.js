@@ -33,7 +33,7 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     );
   
     if (allDeliveredOrUndelivered) {
-      navigation.replace("Map");
+      navigation.navigation('Map');
     }
   };
 

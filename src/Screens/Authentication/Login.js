@@ -70,7 +70,7 @@ const PhoneNumberScreen = ({ navigation }) => {
         />
       </View>
 
-      <Text style={styles.title}>Welcome back!</Text>
+      <Text style={styles.title}>Employee Login!</Text>
       <Text style={styles.subtitle}>Glad to see you again!</Text>
 
       {/* JE Plus ID Input */}

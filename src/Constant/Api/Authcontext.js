@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting login with:', username, password);
   
-      const response = await axios.post('http://jemapps.in/api/auth/login', {
+      const response = await axios.post('http://jemapps.in/api/auth/employee-login', {
         username,
         password,
       });
