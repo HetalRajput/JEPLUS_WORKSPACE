@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 
 // Create Context
 const AuthContext = createContext();
@@ -18,86 +17,69 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Load authentication data from AsyncStorage on mount
   useEffect(() => {
-    // Fetch token, role, and subRole from AsyncStorage on app start
-    const checkAuth = async () => {
+    const loadAuthData = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         const storedRole = await AsyncStorage.getItem('role');
         const storedSubRole = await AsyncStorage.getItem('subRole');
-
-        if (storedToken) setToken(storedToken);
-        if (storedRole) setRole(storedRole);
-        if (storedSubRole) setSubRole(storedSubRole);
+        if (storedToken) {
+          setToken(storedToken);
+        }
+        if (storedRole) {
+          setRole(storedRole);
+        }
+        if (storedSubRole) {
+          setSubRole(storedSubRole);
+        }
       } catch (err) {
-        console.error('Error checking auth:', err);
+        console.error('Error loading auth data:', err);
+        setError('Failed to load authentication data.');
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    loadAuthData();
   }, []);
 
-  const login = async (username, password) => {
-    setLoading(true);
-    setError(null);
-  
+  // Save authentication data to state and AsyncStorage
+  const saveAuthData = async (token, role, subRole) => {
+    console.log("authcontext>>>>>>>>",token,role,subRole);
+    
     try {
-      console.log('Attempting login with:', username, password);
-  
-      const response = await axios.post('http://jemapps.in/api/auth/employee-login', {
-        username,
-        password,
-      });
-  
-      if (response?.status === 200 && response?.data) {
-        const { token, role, subrole } = response.data; // Extract subrole
-  
-        // Save token and role in AsyncStorage
-        await AsyncStorage.setItem('authToken', token);
-        await AsyncStorage.setItem('role', role);
-  
-        // Check if subrole exists before saving
-        if (subrole) {
-          await AsyncStorage.setItem('subRole', subrole);
-          setSubRole(subrole);
-        } else {
-          await AsyncStorage.removeItem('subRole'); // Ensure no stale value is stored
-          setSubRole(null);
-        }
-  
-        // Update state
-        setToken(token);
-        setRole(role);
-  
-        console.log('Login successful:', response.data);
-        return response;
-      } else {
-        throw new Error('Invalid credentials or unexpected response structure.');
-      }
+      await AsyncStorage.setItem('authToken', token);
+      await AsyncStorage.setItem('role', role);
+      await AsyncStorage.setItem('subRole', subRole);
+      setToken(token);
+      setRole(role);
+      setSubRole(subRole);
     } catch (err) {
-      console.error('Login error:', err.message);
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error saving auth data:', err);
+      setError('Failed to save authentication data.');
     }
   };
-  
 
+  // Logout function
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove(['authToken', 'role', 'subRole']); // Remove all keys at once
+      await AsyncStorage.multiRemove(['authToken', 'role', 'subRole']);
       setToken(null);
       setRole(null);
       setSubRole(null);
     } catch (err) {
       console.error('Logout error:', err);
+      setError('Failed to logout. Please try again.');
     }
   };
-
+  if (loading) {
+    return <SplashScreen />;
+  }
   return (
-    <AuthContext.Provider value={{ token, role, subRole, login, logout, loading, error }}>
+    <AuthContext.Provider
+      value={{ token, role, subRole, loading, error, saveAuthData, logout, setSubRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,149 +1,124 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from "react-native";
-import { TextInput } from "react-native-paper";
-import Icon from "react-native-vector-icons/Ionicons";
-import { PrimaryButton } from "../../Components/Button";
-import { Color } from "../../Constant/Constants";
-import { useAuth } from "../../Constant/Api/Authcontext"; // Import useAuth from context
-import NoInternetPopup from "../../Components/Nointernetpopup";
-
-
-
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Keyboard } from 'react-native';
+import { TextInput, Button } from 'react-native-paper'; // Import Button from react-native-paper
+import Icon from 'react-native-vector-icons/Ionicons';
+import { Color } from '../../Constant/Constants';
+import { useAuth } from '../../Constant/Api/Authcontext';
+import NoInternetPopup from '../../Components/Nointernetpopup';
+import LoginfailPopup from '../../Components/Loginfail';
+import axios from 'axios';
 
 const PhoneNumberScreen = ({ navigation }) => {
-  const [jePlusId, setJePlusId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [jePlusId, setJePlusId] = useState('');
+  const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { login, loading, error: authError } = useAuth(); // Get login, loading, and error from context
+  const [loading, setLoading] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const { saveAuthData } = useAuth(); // Use saveAuthData from AuthContext
 
   const handleContinue = async () => {
-    // Trim inputs to avoid leading/trailing spaces
+    Keyboard.dismiss();
     const trimmedId = jePlusId.trim();
     const trimmedPassword = password.trim();
 
     if (!trimmedId) {
-      setError("Please enter your JE Plus ID.");
+      alert('Please enter your JE Plus ID.');
       return;
     }
     if (!trimmedPassword) {
-      setError("Please enter your password.");
+      alert('Please enter your password.');
       return;
     }
 
-    setError("s"); // Clear error if validation passes
+    setLoading(true);
 
     try {
-      // Use the login function from the context and get the response
-      const response = await login(trimmedId, trimmedPassword);
-      
-      
-      // Check if the response status is 200 and navigate
-      if (response && response.status === 200) {
-          console.log(response);
-          
-      } else {
+      const response = await axios.post('http://jemapps.in/api/auth/employee-login', {
+        username: trimmedId,
+        password: trimmedPassword,
+      });
+
+      if (response?.status === 200 && response?.data) {
+        const { token, role, subrole } = response.data;
+        console.log("Login>>>>>", token,role,subrole);
         
-        setError(response?.data?.message || "Invalid credentials.");
+      
+        // Save authentication data to AuthContext
+        await saveAuthData(token, role, subrole);
+
+        console.log('Login successful:', response.data);
+       
+      } else {
+        throw new Error('Invalid credentials or unexpected response structure.');
       }
-    } catch (error) {
-      console.error("Error during login:", error.message);
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      console.error('Login error:', err.message);
+      setShowErrorPopup(true); // Show error popup on failure
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-    <NoInternetPopup/>
-      {/* Logo and Back Button */}
+      <NoInternetPopup />
       <View style={styles.logoContainer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Image
-          source={require("../../Assets/Image/logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={require('../../Assets/Image/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
 
-      <Text style={styles.title}>Employee Login!</Text>
+      <Text style={styles.title}>Welcome back!</Text>
       <Text style={styles.subtitle}>Glad to see you again!</Text>
 
-      {/* JE Plus ID Input */}
       <View style={styles.inputContainer}>
         <TextInput
           label="JEPLUS ID"
           mode="outlined"
           value={jePlusId}
-          onChangeText={(text) => {
-            setJePlusId(text);
-            if (error) setError(""); // Clear error on input change
-          }}
+          onChangeText={setJePlusId}
           style={styles.textInput}
-          outlineStyle={{
-            borderRadius: 8,
-            borderColor: "#1568ab",
-          }}
-          theme={{
-            colors: {
-              text: "#1568ab",
-              placeholder: "#a1a1a1",
-              primary: "#1568ab",
-            },
-          }}
+          outlineStyle={{ borderRadius: 8, borderColor: '#1568ab' }}
+          theme={{ colors: { text: '#1568ab', placeholder: '#a1a1a1', primary: '#1568ab' } }}
         />
       </View>
 
-      {/* Password Input */}
       <TextInput
         label="PASSWORD"
         mode="outlined"
         value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          if (error) setError(""); // Clear error on input change
-        }}
-        secureTextEntry={!isPasswordVisible} // Toggle visibility
+        onChangeText={setPassword}
+        secureTextEntry={!isPasswordVisible}
         style={styles.textInput}
-        outlineStyle={{
-          borderRadius: 8,
-          borderColor: "#1568ab",
-        }}
-        theme={{
-          colors: {
-            text: "#1568ab",
-            placeholder: "#a1a1a1",
-            primary: "#1568ab",
-          },
-        }}
+        outlineStyle={{ borderRadius: 8, borderColor: '#1568ab' }}
+        theme={{ colors: { text: '#1568ab', placeholder: '#a1a1a1', primary: '#1568ab' } }}
         right={
           <TextInput.Icon
-            icon={isPasswordVisible ? "eye-off" : "eye"}
+            icon={isPasswordVisible ? 'eye-off' : 'eye'}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
           />
         }
       />
 
-
-      {/* Error Message */}
-      {(error || authError) && <Text style={styles.errorText}>{error || authError}</Text>}
-
-      {/* Footer with Continue Button */}
       <View style={styles.footer}>
-        {loading ? (
-          <ActivityIndicator size="large" color={Color.primeBlue} />
-        ) : (
-          <PrimaryButton
-            title="Continue"
-            onPress={handleContinue}
-            disabled={loading} // Disable button during loading
-          />
-        )}
+        <Button
+          mode="contained"
+          onPress={handleContinue}
+          loading={loading} // Show loading indicator
+          disabled={loading} // Disable button when loading
+          style={styles.button}
+          labelStyle={styles.buttonLabel}
+        >
+          Continue
+        </Button>
       </View>
+
+      <LoginfailPopup
+        visible={showErrorPopup}
+        message="Login failed. Please check your credentials and try again."
+        onClose={() => setShowErrorPopup(false)}
+      />
     </View>
   );
 };
@@ -152,49 +127,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor: "white",
+    backgroundColor: 'white',
   },
   logoContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     marginBottom: 20,
   },
   backButton: {
-    position: "absolute",
+    position: 'absolute',
     left: 0,
   },
   logo: {
-    width: "60%",
+    width: '60%',
     height: 60,
   },
   title: {
     fontSize: 30,
-    fontWeight: "600",
-    color: "#1B1B1D",
+    fontWeight: '600',
+    color: '#1B1B1D',
   },
   subtitle: {
     marginTop: 10,
     fontSize: 14,
-    color: "#6C6C6C",
+    color: '#6C6C6C',
     lineHeight: 22,
   },
   inputContainer: {
     marginTop: 20,
   },
   textInput: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     marginBottom: 10,
   },
-  errorText: {
-    color: "red",
-    fontSize: 12,
-    marginTop: 5,
-  },
   footer: {
-    marginTop: "auto",
-    alignItems: "center",
-    width: "100%",
+    marginTop: 'auto',
+    alignItems: 'center',
+    width: '100%',
+  },
+  button: {
+    width: '90%',
+    backgroundColor: Color.primedarkblue, // Use your primary color
+    borderRadius: 30,
+    paddingVertical: 4,
+  },
+  buttonLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
