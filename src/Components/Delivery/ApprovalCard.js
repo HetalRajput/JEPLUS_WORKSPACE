@@ -37,9 +37,11 @@ export const ApprovalCard = ({ item, navigation }) => {
 
   // Mock list of persons (replace with API data)
   const persons = [
-    { id: "1", name: "John Doe" },
-    { id: "2", name: "Jane Smith" },
-    { id: "3", name: "Alice Johnson" },
+    { id: "1", name: "MUKESH JHA " },
+    { id: "2", name: "ROHIT JHA" },
+    { id: "3", name: "BHOLA MISHRA" },
+    { id: "4", name: "JAVED RASHID" }
+
   ];
 
   // Function to send OTP (mock implementation)

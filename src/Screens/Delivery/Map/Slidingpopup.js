@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 10,
-    backgroundColor: Color.lightPurple,
+    backgroundColor: Color.white,
     paddingBottom: 80, // More bottom margin
   },
   invoiceCard: {

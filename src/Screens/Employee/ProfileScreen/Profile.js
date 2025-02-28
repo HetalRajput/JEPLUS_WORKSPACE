@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   profileOption: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 25,
+    paddingHorizontal: 10,
     paddingVertical:10,
     backgroundColor: "#f8f9fa",
     borderRadius: 10,
