@@ -74,7 +74,7 @@ export const gettaginfo = async () => {
   export const PickedupInvoice = async ({ TagNo, TagDt, SMan, PickedStatus }) => {
     try {
       // Debugging: Log the data before sending
-      console.log('Sending Data:', { TagNo, TagDt, SMan, PickedStatus });
+   
   
       const response = await axios.post(
         'http://jemapps.in/api/delivery/update-tag-status',
@@ -86,7 +86,7 @@ export const gettaginfo = async () => {
         }
       );
   
-      console.log('Response:', response.data);
+
   
       return {
         success: true,

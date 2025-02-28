@@ -9,7 +9,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Modal,
-  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { RadioButton } from "react-native-paper";
@@ -28,34 +27,34 @@ export const UpiPayCard = ({ item, navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [showReceivingButton, setShowReceivingButton] = useState(false);
-  const [errorModalVisible, setErrorModalVisible] = useState(false); // State for error modal
-  const [missingData, setMissingData] = useState(""); // State to store missing data message
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [missingData, setMissingData] = useState("");
 
   const handlePayment = async () => {
-    // Validate required fields
     const missingFields = [];
     if (!amount) missingFields.push("Collected Amount");
-    if (!invoicePhoto) missingFields.push("Invoice Photo");
-    if (!cashPhoto) missingFields.push("Cash Photo");
+    if (!invoicePhoto) missingFields.push("Cash Photo");
+    if (!cashPhoto) missingFields.push("Invoice Photo");
 
     if (missingFields.length > 0) {
       setMissingData(`Please fill the following data: ${missingFields.join(", ")}`);
-      setErrorModalVisible(true); // Show error modal
+      setErrorModalVisible(true);
       return;
     }
 
     setIsLoading(true);
     try {
       const location = await getCurrentLocation();
-      const formData = new FormData();
+      console.log(location);
 
+      const formData = new FormData();
       formData.append("Vno", item.id);
       formData.append("Acno", item.acno);
       formData.append("TagDt", item.date);
       formData.append("SMan", item.sman);
       formData.append("VAmount", item.amount);
       formData.append("PaidAmount", amount);
-      formData.append("PayMethod", "UPI");
+      formData.append("PayMethod", "Cash");
       formData.append("DelStatus", "Delivered");
       formData.append("remarks", selectedReason || "All Payment collected successfully");
       formData.append("Lat", location.latitude || "0.0");
@@ -98,7 +97,6 @@ export const UpiPayCard = ({ item, navigation }) => {
       const image = await ImagePicker.openCamera({
         width: 300,
         height: 400,
-        cropping: true,
       });
       setPhoto(image.path);
       setShowReceivingButton(true);
@@ -106,6 +104,34 @@ export const UpiPayCard = ({ item, navigation }) => {
       console.error("Error selecting image:", error.message);
     }
   };
+
+  const pickImageFromGallery = async (setPhoto) => {
+    try {
+      const image = await ImagePicker.openPicker({
+        width: 300,
+        height: 400,
+        mediaType: 'photo', // Restrict selection to images only
+      });
+  
+      // Check if the selected image has a valid format (JPEG/PNG)
+      const allowedFormats = ['jpg', 'jpeg', 'png'];
+      const fileExtension = image.path.split('.').pop().toLowerCase();
+  
+      if (allowedFormats.includes(fileExtension)) {
+        setPhoto(image.path);
+        setShowReceivingButton(true);
+      } else {
+        console.warn("Invalid file format. Please select a JPEG or PNG image.");
+      }
+    } catch (error) {
+      if (error.code === 'E_PICKER_CANCELLED') {
+        console.log("User cancelled image selection");
+      } else {
+        console.error("Error selecting image from gallery:", error.message);
+      }
+    }
+  };
+  
 
   const resetState = () => {
     setAmount("");
@@ -122,7 +148,7 @@ export const UpiPayCard = ({ item, navigation }) => {
   };
 
   const handleErrorModalClose = () => {
-    setErrorModalVisible(false); // Close error modal
+    setErrorModalVisible(false);
   };
 
   return (
@@ -148,7 +174,7 @@ export const UpiPayCard = ({ item, navigation }) => {
             <RadioButton.Group onValueChange={setSelectedReason} value={selectedReason}>
               <View style={styles.radioItem}>
                 <RadioButton value="less_cash" />
-                <Text>Customer gave less UPI</Text>
+                <Text>Customer gave less UPI amt</Text>
               </View>
               <View style={styles.radioItem}>
                 <RadioButton value="discount" />
@@ -162,16 +188,26 @@ export const UpiPayCard = ({ item, navigation }) => {
           </View>
         )}
 
-        {/* Capture Cash Photo Button */}
-        <TouchableOpacity
-          style={styles.captureButton1}
-          onPress={() => pickImage(setInvoicePhoto)}
-        >
-          <Icon name="camera" size={20} color="black" />
-          <Text> Capture UPI Photo</Text>
-        </TouchableOpacity>
+        {/* Capture Cash Photo and Upload from Gallery Buttons */}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.captureButton1, styles.flexButton]}
+            onPress={() => pickImage(setInvoicePhoto)}
+          >
+            <Icon name="camera" size={20} color="black" />
+            <Text> Capture UPI Photo </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.captureButton2, { marginHorizontal: 0 }]}
+            onPress={() => pickImageFromGallery(setInvoicePhoto)}
+          >
+            <Icon name="image" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
 
         {invoicePhoto && (
+
           <View style={styles.imageContainer}>
             <Image source={{ uri: invoicePhoto }} style={styles.previewImage} />
             <TouchableOpacity
@@ -181,18 +217,32 @@ export const UpiPayCard = ({ item, navigation }) => {
               <Icon name="close-circle" size={24} color="gray" />
             </TouchableOpacity>
           </View>
+
+
+
         )}
 
         {/* Capture Receiving Photo Button (Conditionally Rendered) */}
         {showReceivingButton && (
           <>
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={() => pickImage(setCashPhoto)}
-            >
-              <Icon name="camera" size={20} color="white" />
-              <Text style={{ color: "white" }}> Capture Receiving Photo</Text>
-            </TouchableOpacity>
+
+            <View style={styles.buttonRow1}>
+              <TouchableOpacity
+                style={[styles.captureButton1, styles.flexButton]}
+                onPress={() => pickImage(setCashPhoto)}
+              >
+                <Icon name="camera" size={20} color="white" />
+                <Text style={{color:"white"}}> Capture Invoice Photo</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.captureButton2, { marginHorizontal: 0,backgroundColor:"white",borderWidth:1,borderColor:Color.primeBlue }]}
+                onPress={() => pickImageFromGallery(setCashPhoto)}
+              >
+                <Icon name="image" size={20} color={Color.primeBlue} />
+              </TouchableOpacity>
+            </View>
+
 
             {cashPhoto && (
               <View style={styles.imageContainer}>
@@ -330,11 +380,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
     borderColor: Color.primeBlue,
     paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 15,
+  },
+  captureButton2: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderColor: Color.primeBlue,
+    paddingVertical: 12,
+    backgroundColor: Color.primeBlue,
+    paddingHorizontal: 20,
+    borderRadius: 9
+  },
+  invcaptureButton2: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderColor: Color.primeBlue,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 9
   },
   buttonText1: {
     color: "black",
@@ -407,5 +473,24 @@ const styles = StyleSheet.create({
   },
   okButtonText: {
     color: "white",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Color.primeBlue,
+    marginBottom: 10
+  },
+  buttonRow1: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    backgroundColor:Color.primeBlue,
+    marginBottom: 10
+  },
+  flexButton: {
+    flex: 1,
+
   },
 });

@@ -5,7 +5,7 @@ import { Color } from '../../../Constant/Constants';
 
 const EmployeeProfileInfoScreen = ({ route }) => {
   const { userData } = route.params; // Fetch user data from route params
-  console.log("User Data:", userData);
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

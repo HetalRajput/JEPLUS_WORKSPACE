@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
 
   // Save authentication data to state and AsyncStorage
   const saveAuthData = async (token, role, subRole) => {
-    console.log("authcontext>>>>>>>>",token,role,subRole);
+
     
     try {
       await AsyncStorage.setItem('authToken', token);

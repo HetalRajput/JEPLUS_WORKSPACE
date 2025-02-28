@@ -40,7 +40,6 @@ const DashboardScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
  
-  console.log(summaryData);
 
   // Load isOnline state from AsyncStorage
   useEffect(() => {
@@ -51,7 +50,7 @@ const DashboardScreen = ({ navigation }) => {
           setIsOnline(JSON.parse(storedState));
         }
       } catch (err) {
-        console.log('Failed to load state:', err);
+      
       }
     };
     loadState();

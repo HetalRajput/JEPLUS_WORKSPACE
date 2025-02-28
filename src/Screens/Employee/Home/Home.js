@@ -95,7 +95,7 @@ const HomeScreen = ({navigation}) => {
     const fetchUserInfo = async () => {
       try {
         const response = await getUserInfo(); // Call API
-        console.log(response);
+    
         
         if (response && response.data) {
           setUserName(response.data.empName || 'Welcome'); // Set username

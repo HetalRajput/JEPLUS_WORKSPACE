@@ -19,7 +19,7 @@ const InvoiceScreen = ({ navigation, route }) => {
       const response = await gettagInvoice(tagNo, tagSMan);
 
       if (response && response.data && Array.isArray(response.data)) {
-        console.log('Fetched Invoices:', response.data);
+     
 
         const formattedInvoices = response.data.map((invoice) => ({
           id: invoice.Vno?.toString() || Math.random().toString(),

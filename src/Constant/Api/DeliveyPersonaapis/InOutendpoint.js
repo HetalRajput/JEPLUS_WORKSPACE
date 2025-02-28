@@ -20,7 +20,7 @@ export const PunchInOut = async (formData) => {
     const token = await getToken(); // Get token from AsyncStorage
 
     // Create FormData
-  console.log(formData);
+
   
 
     const response = await axios.post("http://jemapps.in/api/delivery/delboy-in-out", formData, {
@@ -29,8 +29,7 @@ export const PunchInOut = async (formData) => {
         "Content-Type": "multipart/form-data", // Required for FormData
       },
     });
-    console.log(response.data);
-    
+
     return {
       success: true,
       data: response.data,

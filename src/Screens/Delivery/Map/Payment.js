@@ -16,34 +16,37 @@ import { CashPayCard } from "../../../Components/Delivery/CashPaycard";
 import { ChequePayCard } from "../../../Components/Delivery/ChequePaycard";
 import { UpiPayCard } from "../../../Components/Delivery/Upipaycard";
 import { PayLaterCard } from "../../../Components/Delivery/Paylatercard";
-import { Undelivered } from "../../../Components/Delivery/Undelivered";
+import { ApprovalCard } from "../../../Components/Delivery/ApprovalCard";
 
-const CustomerInfoScreen = ({ route , navigation}) => {
+const CustomerInfoScreen = ({ route, navigation }) => {
   const { invoice } = route.params;
   const [selectedPayment, setSelectedPayment] = useState("cash");
-
-
+  const [isApproved, setIsApproved] = useState(false);
 
   const renderPaymentCard = () => {
+  
+
     switch (selectedPayment) {
       case "cash":
         return <CashPayCard item={invoice} navigation={navigation} />;
       case "upi":
-        return <UpiPayCard item={invoice} navigation={navigation}/>;
+        return <UpiPayCard item={invoice} navigation={navigation} />;
       case "cheque":
-        return <ChequePayCard item={invoice} navigation={navigation}/>;
+        return <ChequePayCard item={invoice} navigation={navigation} />;
       case "paylater":
         return <PayLaterCard item={invoice} navigation={navigation} />;
+      case "Approval":
+        return <ApprovalCard item={invoice} navigation={navigation} />;
       default:
         return null;
     }
   };
+
   useEffect(() => {
     if (invoice.crlimit === 0 && selectedPayment === "paylater") {
-      setSelectedPayment("cash"); // Default to cash if Pay Later is removed
+      setIsApproved(false); // Reset approval status if payment method changes
     }
-  }, [invoice.crlimit, selectedPayment]);
-
+  }, [selectedPayment]);
 
   return (
     <ScrollView
@@ -83,14 +86,18 @@ const CustomerInfoScreen = ({ route , navigation}) => {
                         <Text style={styles.radioLabel}>Pay Later</Text>
                       </View>
                     )}
+                      {invoice.crlimit === 0 && (
+                      <View style={styles.radioButton}>
+                        <RadioButton value="Approval" />
+                        <Text style={styles.radioLabel}>Approval</Text>
+                      </View>
+                    )}
                   </View>
                 </RadioButton.Group>
-
               </View>
-              <View style={{flex:1}}>
-              {renderPaymentCard()}
+              <View style={{ flex: 1 }}>
+                {renderPaymentCard()}
               </View>
-             
             </View>
           </View>
         </ScrollView>
@@ -104,7 +111,7 @@ export default CustomerInfoScreen;
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 20, // Ensures enough space at the bottom
+    paddingBottom: 20,
   },
   mainContainer: {
     flex: 1,
@@ -152,7 +159,6 @@ const styles = StyleSheet.create({
   radioButton: {
     flexDirection: "row",
     alignItems: "center",
-
   },
   radioLabel: {
     fontSize: 16,

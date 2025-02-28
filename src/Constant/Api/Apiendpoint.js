@@ -147,7 +147,7 @@ export const searchProduct = async (query) => {
     );
      
      
-    console.log(response.data);
+
     
     // Return the search results
     return response.data;
@@ -224,7 +224,7 @@ export const overDue = async () => {
 };
 
 export const OrderHistory = async (startDate,endDate) => {
- console.log(startDate,endDate);
+ 
   try {
     const token = await getToken(); // Get token from AsyncStorage
     const response = await axios.get(`http://jemapps.in/api/product/order-history/${startDate}/${endDate}`,{
@@ -250,15 +250,14 @@ export const OrderHistory = async (startDate,endDate) => {
 
 
 export const orderhistoryitems = async ({Ordno}) => {
-  console.log(Ordno);
+  
   
   try {
     const token = await getToken(); // Get token from AsyncStorage
     const response = await axios.get(`http://jemapps.in/api/product/order-history-items/${Ordno}`);
     // Handle the response data
  
-    console.log(response);
-    
+ 
     if (response.data) {
       
       return response.data;
@@ -308,7 +307,7 @@ export const OfferProduct = async () => {
   try {
     const response = await axios.get(`http://jemapps.in/api/product/get-offer`);
     // Handle the response data]
-    console.log(response.data);
+   
     
     if (response.data) {
       
@@ -324,7 +323,7 @@ export const feedback = async (payload) => {
   try {
     // Get token from AsyncStorage
     const token = await getToken();
-    console.log(token);
+
     
 
     // API endpoint
@@ -338,7 +337,7 @@ export const feedback = async (payload) => {
       },
     });
    
-    console.log(response.data);
+
     
     // Handle successful response
     if (response.status === 200 || response.status === 201) {
@@ -381,7 +380,7 @@ export const Postdatedcheak = async () => {
       }
     });
     // Handle the response data
-    console.log(response.data);
+ 
     
     if (response.data) {
       
@@ -395,7 +394,7 @@ export const Postdatedcheak = async () => {
 export const Postfcmtoken = async () => {
 
 const fcmtoken = await getFcmToken();
-console.log(">>>>>>>>>>>>",fcmtoken);
+
 
 
   try {
@@ -406,7 +405,7 @@ console.log(">>>>>>>>>>>>",fcmtoken);
       }
     });
     // Handle the response data
-    console.log(response.data);
+   
     
     if (response.data) {
       
@@ -427,7 +426,7 @@ export const GetNotification = async () => {
       }
     });
     // Handle the response data
-    console.log(response.data);
+
     
     if (response.data) {
       

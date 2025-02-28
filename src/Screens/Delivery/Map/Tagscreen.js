@@ -30,7 +30,7 @@ const TagCardScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await gettaginfo();
-      console.log(response);
+      
   
       if (response?.success && response.data.length > 0) {
         setTags(response.data);

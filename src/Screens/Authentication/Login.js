@@ -40,13 +40,13 @@ const PhoneNumberScreen = ({ navigation }) => {
 
       if (response?.status === 200 && response?.data) {
         const { token, role, subrole } = response.data;
-        console.log("Login>>>>>", token,role,subrole);
+
         
       
         // Save authentication data to AuthContext
         await saveAuthData(token, role, subrole);
 
-        console.log('Login successful:', response.data);
+   
        
       } else {
         throw new Error('Invalid credentials or unexpected response structure.');

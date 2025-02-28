@@ -46,7 +46,7 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     try {
       setLoading(true);
       const response = await getSelectdInvoice();
-      console.log(response);
+
 
       if (response.success) {
         const formattedInvoices = response.data.map((item) => ({

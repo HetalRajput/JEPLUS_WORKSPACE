@@ -19,7 +19,7 @@ const getToken = async () => {
   
 
 export const GetHistory = async (sdate ,edate) => {
-    console.log(sdate,edate);
+   
     
     try {
       const token = await getToken(); // Get token from AsyncStorage
