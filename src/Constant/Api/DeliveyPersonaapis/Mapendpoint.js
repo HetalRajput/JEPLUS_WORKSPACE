@@ -53,7 +53,7 @@ export const gettaginfo = async () => {
       const response = await axios.get(`http://jemapps.in/api/delivery/get-invoice/${sMan}/${TagNo}`,);
   
       // Return the user info with a success status
-    
+   
      
       
       return {
@@ -87,7 +87,7 @@ export const gettaginfo = async () => {
       );
   
 
-  
+   
       return {
         success: true,
         data: response.data,
@@ -112,7 +112,7 @@ export const gettaginfo = async () => {
       });
   
       // Return the user info with a success status
-    
+      
       
       return {
         success: true,
