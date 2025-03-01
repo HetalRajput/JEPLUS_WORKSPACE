@@ -54,7 +54,7 @@ const OTPInput = ({ otp, setOtp, verifyOtp }) => (
 
 const ImagePickerButton = ({ onPress, iconName, label, style }) => (
   <TouchableOpacity style={style} onPress={onPress}>
-    <Icon name={iconName} size={20} color="white" />
+    <Icon name={iconName} size={20} color={Color.primeBlue} />
     {label && <Text style={{ color: "white" }}> {label}</Text>}
   </TouchableOpacity>
 );
@@ -268,7 +268,7 @@ export const ApprovalCard = ({ item, navigation }) => {
             onPress={() => pickImage(setInvoicePhoto)}
             iconName="camera"
             label="Capture Invoice Photo"
-            style={[styles.captureButton1, styles.flexButton]}
+            style={[styles.captureButton1, styles.flexButton,styles.buttonText]}
           />
           <ImagePickerButton
             onPress={() => pickImageFromGallery(setInvoicePhoto)}
