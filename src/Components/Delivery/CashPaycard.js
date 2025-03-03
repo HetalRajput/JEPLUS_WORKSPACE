@@ -19,6 +19,8 @@ import { getCurrentLocation } from "./GetCurrentlocarion";
 import { UndeliveredButton } from "../../Constant/Api/DeliveyPersonaapis/Undeliveredinv";
 
 export const CashPayCard = ({ item, navigation }) => {
+  console.log(item);
+  
   const [amount, setAmount] = useState(item.amount || "00");
   const [invoicePhoto, setInvoicePhoto] = useState(null);
   const [cashPhoto, setCashPhoto] = useState(null);

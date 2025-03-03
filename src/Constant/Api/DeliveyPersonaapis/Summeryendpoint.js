@@ -23,11 +23,12 @@ export const Summery= async () => {
 
   
 
-    const response = await axios.get("http://jemapps.in/api/delivery/get-summary", {
+    const response = await axios.get("http://jemapps.in/api/delivery/get-summary2", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+console.log(response.data) ;
 
     return {
       success: true,

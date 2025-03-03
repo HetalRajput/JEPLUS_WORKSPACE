@@ -21,6 +21,7 @@ const paymentIcons = {
   Cheque: 'document-text-outline',
   PayLater: 'time-outline',  // Icon for PayLater
   undelivered: 'close-circle-outline',  // Icon for Undeliver
+  Approval:'checkmark-circle'
 };
 
 const HistoryScreen = () => {
@@ -187,7 +188,7 @@ const HistoryScreen = () => {
                   </View>
 
                   <Text style={styles.invoiceText}>Date: {item.TagDt}</Text>
-                  <Text style={styles.invoiceText}>Time: {item.createdAt}</Text>
+                  <Text style={styles.invoiceText}>Time: {item.createdAt.slice(11,16)}</Text>
 
                   <View style={styles.undeliveredLabel}>
                     <Text style={styles.undeliveredText}>Undelivered</Text>

@@ -19,15 +19,18 @@ import { getCurrentLocation } from "./GetCurrentlocarion";
 import { UndeliveredButton } from "../../Constant/Api/DeliveyPersonaapis/Undeliveredinv";
 import { Picker } from '@react-native-picker/picker';
 import ImagePicker from "react-native-image-crop-picker";
+import { Sendotp } from "../../Constant/Api/DeliveyPersonaapis/Mapendpoint";
+import { Verifyotp } from "../../Constant/Api/DeliveyPersonaapis/Mapendpoint";
 
 // Reusable Components
-const Dropdown = ({ label, selectedValue, onValueChange, items }) => (
+const Dropdown = ({ label, selectedValue, onValueChange, items, disabled }) => (
   <View style={styles.dropdownContainer}>
     <Text style={styles.label}>{label}</Text>
     <Picker
       selectedValue={selectedValue}
       onValueChange={onValueChange}
       style={styles.picker}
+      enabled={!disabled} // Disable the Picker when disabled is true
     >
       <Picker.Item label="Select a person" value="" />
       {items.map((item) => (
@@ -88,6 +91,7 @@ const ErrorModal = ({ visible, message, onClose }) => (
 );
 
 export const ApprovalCard = ({ item, navigation }) => {
+  
   const [amount, setAmount] = useState(item.amount || "00");
   const [invoicePhoto, setInvoicePhoto] = useState(null);
   const [selectedReason, setSelectedReason] = useState("");
@@ -96,36 +100,58 @@ export const ApprovalCard = ({ item, navigation }) => {
   const [successModal, setSuccessModal] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [missingData, setMissingData] = useState("");
-
+  const [disabled, setDisabled] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
 
   const persons = [
-    { id: "1", name: "MUKESH JHA " },
     { id: "2", name: "ROHIT JHA" },
-    { id: "3", name: "BHOLA MISHRA" },
-    { id: "4", name: "JAVED RASHID" }
+    { id: "3", name: "BHOLA MISHRA" }
   ];
 
-  const sendOtp = () => {
+  const sendOtp = async() => {
     if (!selectedPerson) {
       Alert.alert("Error", "Please select a person.");
       return;
     }
-    setOtpSent(true);
-    Alert.alert("Success", `OTP sent to ${selectedPerson}`);
+    console.log(item.acno,selectedPerson);
+    
+    const response = await Sendotp(item.acno,selectedPerson);
+    
+ 
+    
+    if (response.success) {
+      Alert.alert("Success", `OTP sent to ${selectedPerson}`)
+      setOtpSent(true);
+      return;
+    }
+    else{
+      Alert.alert("Error", "Failed to send OTP. Please try again.",response.message);
+    }
+ 
+    ;
   };
 
-  const verifyOtp = () => {
-    if (otp === "1234") {
-      setOtpVerified(true);
-      Alert.alert("Success", "OTP verified successfully!");
-    } else {
-      Alert.alert("Error", "Invalid OTP. Please try again.");
+  const verifyOtp = async () => {
+    try {
+      const response = await Verifyotp(item.acno, otp);
+  
+      if (response.success) {
+        setOtpVerified(true);
+        setDisabled(true);
+        Alert.alert("Success", response.message);
+      } else {
+        Alert.alert("Error", response.message);
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     }
   };
+  
+
 
   const handlePayment = async () => {
     if (!otpVerified) {
@@ -154,10 +180,10 @@ export const ApprovalCard = ({ item, navigation }) => {
       formData.append("TagDt", item.date);
       formData.append("SMan", item.sman);
       formData.append("VAmount", item.amount);
-      formData.append("PaidAmount", amount);
-      formData.append("PayMethod", "Approvel");
+      formData.append("PaidAmount", "0");
+      formData.append("PayMethod", "Approval");
       formData.append("DelStatus", "Delivered");
-      formData.append("remarks", "Approvel via", selectedPerson);
+      formData.append("remarks", "Approval successfully");  
       formData.append("Lat", location.latitude || "0.0");
       formData.append("Long", location.longitude || "0.0");
       if (invoicePhoto) {
@@ -167,11 +193,13 @@ export const ApprovalCard = ({ item, navigation }) => {
           name: "invoice_payment.jpg",
         });
       }
-      formData.append("image1", {});
+      // formData.append("image1", {});
 
       const response = await Pay(formData);
-
-      if (response.success) {
+      console.log(">>>>>>>>>>",response);
+    
+    
+      if (response) {
         setSuccessModal(true);
         resetState();
       } else {
@@ -251,6 +279,7 @@ export const ApprovalCard = ({ item, navigation }) => {
           selectedValue={selectedPerson}
           onValueChange={setSelectedPerson}
           items={persons}
+          disabled={otpVerified} // Disable the Dropdown after OTP is verified
         />
 
         {!otpSent && (
@@ -302,7 +331,7 @@ export const ApprovalCard = ({ item, navigation }) => {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.buttonText}>Delivered</Text>
+              <Text style={styles.DeliveredText}>Delivered</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -313,7 +342,6 @@ export const ApprovalCard = ({ item, navigation }) => {
     </ScrollView>
   );
 };
-
 
 const styles = StyleSheet.create({
   scrollContainer: {
@@ -345,12 +373,14 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: {
     marginBottom: 15,
+    
   },
   label: {
     fontSize: 14,
     fontWeight: "bold",
     marginBottom: 5,
     color: "#444",
+
   },
   picker: {
     borderWidth: 1,
@@ -375,7 +405,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 12,
-    padding: 12,
+    padding: 8,
     fontSize: 16,
     backgroundColor: "#f9f9f9",
     marginRight: 10,
@@ -406,6 +436,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
+  DeliveredText:{
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -433,8 +469,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    
   },
   buttonRow: {
     flexDirection: "row",
@@ -471,12 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 15,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
+
   captureButton1: {
     flexDirection: "row",
     alignItems: "center",

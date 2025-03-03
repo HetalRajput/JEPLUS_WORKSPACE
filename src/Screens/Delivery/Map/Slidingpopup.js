@@ -27,15 +27,15 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
    
-  const checkInvoicesStatus = (invoicesList) => {
-    const allDeliveredOrUndelivered = invoicesList.every(
-      (item) => item.delStatus === "Delivered" || item.delStatus === "Failed"
-    );
+  // const checkInvoicesStatus = (invoicesList) => {
+  //   const allDeliveredOrUndelivered = invoicesList.every(
+  //     (item) => item.delStatus === "Delivered" || item.delStatus === "Failed"
+  //   );
   
-    if (allDeliveredOrUndelivered) {
-      navigation.navigation('Map');
-    }
-  };
+  //   if (allDeliveredOrUndelivered) {
+  //     navigation.navigation('Map');
+  //   }
+  // };
 
 
 
@@ -46,7 +46,8 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     try {
       setLoading(true);
       const response = await getSelectdInvoice();
-
+        console.log(">>>>>>>>>>>>>>>>>>>",response.data);
+        
 
       if (response.success) {
         const formattedInvoices = response.data.map((item) => ({
@@ -67,7 +68,7 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
           const statusOrder = { Pending: 0, Delivered: 1, Failed: 2 };
           return statusOrder[a.delStatus] - statusOrder[b.delStatus];
         });
-        checkInvoicesStatus(formattedInvoices);
+        // checkInvoicesStatus(formattedInvoices);
         setInvoices(formattedInvoices);
       }
     } catch (error) {
@@ -174,6 +175,11 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
           renderItem={renderInvoice}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.contentContainer}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No invoices found</Text>
+            </View>
+          )}
         />
       )}
     </Animated.View>
@@ -269,6 +275,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#dc3545', // Red color for failed status
     paddingHorizontal: 15
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+
+  }
 
 });
 

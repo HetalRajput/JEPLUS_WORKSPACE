@@ -53,7 +53,7 @@ export const gettaginfo = async () => {
       const response = await axios.get(`http://jemapps.in/api/delivery/get-invoice/${sMan}/${TagNo}`,);
   
       // Return the user info with a success status
-   
+           
      
       
       return {
@@ -110,7 +110,8 @@ export const gettaginfo = async () => {
           Authorization: `Bearer ${token}` // Add Bearer token to request headers
         }
       });
-  
+     console.log(response.data);
+     
       // Return the user info with a success status
       
       
@@ -130,5 +131,57 @@ export const gettaginfo = async () => {
       };
     }
   };
-
- 
+  export const Sendotp = async (acno, name) => {
+    console.log(acno, name);
+    
+    try {
+      const response = await axios.post("http://jemapps.in/api/delivery/send-otp", { acno, name });
+    
+     
+      return {
+        success: true,
+        data: response,  // Extracting response data
+        message: "OTP sent successfully",
+      };
+    } catch (error) {
+      console.error("Error in send OTP:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send OTP",
+      };
+    }
+  };
+  export const Verifyotp = async (acno, otp) => {
+    try {
+      const response = await axios.post("http://jemapps.in/api/delivery/verify-otp", { acno, otp });
+  
+      if (response.status === 200 && response.data?.success) {
+        return {
+          success: true,
+          message: response.data.message || "OTP verified successfully",
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data?.message || "Invalid OTP. Please try again.",
+        };
+      }
+    } catch (error) {
+      console.error("Error in verify OTP:", error);
+  
+      let errorMessage = "Failed to verify OTP";
+      if (error.response) {
+        if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || "Invalid OTP. Please try again.";
+        } else if (error.response.status === 500) {
+          errorMessage = "Server error. Please try again later.";
+        }
+      }
+  
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+  };
+  
