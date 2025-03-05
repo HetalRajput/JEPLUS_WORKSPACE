@@ -8,6 +8,7 @@ import IntroSlider from '../Screens/Authentication/Appintroslider';
 import { useAuth } from '../Constant/Api/Authcontext';
 import DeliveryBottomTab from '../Components/DeliveryBottomTab';
 import SplashScreen from '../Screens/Authentication/Splashscreen';
+import CollectionBottomTab from '../Components/CollectionBottomTab';
 
 const Stack = createStackNavigator();
 
@@ -61,7 +62,7 @@ const AppNavigator = () => {
               <>
                 <Stack.Screen
                   name="Delivery"
-                  component={DeliveryBottomTab}
+                  component={CollectionBottomTab}
                   options={{ headerShown: false }}
                 />
                 <Stack.Screen

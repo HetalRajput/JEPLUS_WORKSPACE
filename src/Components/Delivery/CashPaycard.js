@@ -95,11 +95,16 @@ export const CashPayCard = ({ item, navigation }) => {
   };
 
   const pickImage = async (setPhoto) => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.5,
+      width: 1080,
+      height: 1920,
+      saveToPhotos: false,
+    };
+  
     try {
-      const image = await ImagePicker.openCamera({
-        width: 300,
-        height: 400,
-      });
+      const image = await ImagePicker.openCamera(options);
       setPhoto(image.path);
       setShowReceivingButton(true);
     } catch (error) {
