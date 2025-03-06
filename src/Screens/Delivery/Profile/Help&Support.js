@@ -4,7 +4,7 @@ import { TextInput, Button } from 'react-native-paper';
 import { Color } from '../../../Constant/Constants';
 import { PrimaryButton } from '../../../Components/Other/Button';
 
-const EmployeeHelpAndSupportScreen = () => {
+const DeliveryHelpAndSupportScreen = () => {
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
     const email = 'support@company.com';
@@ -132,4 +132,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EmployeeHelpAndSupportScreen;
+export default DeliveryHelpAndSupportScreen;

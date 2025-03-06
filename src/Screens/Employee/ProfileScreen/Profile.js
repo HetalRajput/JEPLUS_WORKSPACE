@@ -16,16 +16,17 @@ import { useAuth } from '../../../Constant/Api/Authcontext';
 import { getUserInfo } from '../../../Constant/Api/Apiendpoint';
 
 const ProfileScreen = ({ navigation }) => {
-  const { logout, subRole } = useAuth();
+  const { logout } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [switchProfileModalVisible, setSwitchProfileModalVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false); // State for logout confirmation modal
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await getUserInfo();
+        console.log(response);
+        
         if (response && response.data) {
           setUserData(response.data);
         }
@@ -44,19 +45,7 @@ const ProfileScreen = ({ navigation }) => {
     logout(); // Perform logout
   };
 
-  const handleSwitchProfile = async (subRole) => {
-    if (subRole === 'DELIVERY') {
-      navigation.replace('Delivery');
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={Color.primeBlue} />
-      </View>
-    );
-  }
+  
 
   return (
     <View style={styles.container}>
@@ -106,7 +95,7 @@ const ProfileScreen = ({ navigation }) => {
           color={Color.primeBlue}
           title="Switch Profile"
           description="Change your user role"
-          onPress={() => setSwitchProfileModalVisible(true)}
+          onPress={() => navigation.navigate('Switch Profile')}
         />
         <OptionItem
           icon="log-out"
@@ -118,36 +107,7 @@ const ProfileScreen = ({ navigation }) => {
         />
       </View>
 
-      {/* Modal for Switching Profile */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={switchProfileModalVisible}
-        onRequestClose={() => setSwitchProfileModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Switch Profile</Text>
 
-            {subRole === 'DELIVERY' ? (
-
-              <TouchableOpacity
-                style={styles.profileOption}
-                onPress= {()=>handleSwitchProfile(subRole)}
-              >
-                <Icon name="bicycle" size={24} color={Color.primeBlue} />
-                <Text style={styles.profileOptionText}>Delivery</Text>
-              </TouchableOpacity>
-            ) : (
-              <Text style={styles.noRoleText}>You have no role assigned</Text>
-            )}
-
-            <TouchableOpacity style={styles.closeButton} onPress={() => setSwitchProfileModalVisible(false)}>
-              <Text style={styles.closeButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Logout Confirmation Modal */}
       <Modal

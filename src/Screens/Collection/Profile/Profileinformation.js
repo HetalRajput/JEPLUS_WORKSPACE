@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import CustomTextInput from '../../../Components/Other/CustomInput';
 import { Color } from '../../../Constant/Constants';
 
-const EmployeeProfileInfoScreen = ({ route }) => {
+const CollectionProfileInfoScreen = ({ route }) => {
   const { userData } = route.params; // Fetch user data from route params
 
 
@@ -33,4 +33,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EmployeeProfileInfoScreen;
+export default CollectionProfileInfoScreen;

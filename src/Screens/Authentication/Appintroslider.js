@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import AppIntroSlider from 'react-native-app-intro-slider';
-import { PrimaryButton } from '../../Components/Button';
+import { PrimaryButton } from '../../Components/Other/Button';
 
 const slides = [
   {

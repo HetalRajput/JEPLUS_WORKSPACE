@@ -1,6 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestUserPermission ,setupFCMListeners, getFCMToken ,  } from '../../Components/Firebasepushnoti';
+import { requestUserPermission ,setupFCMListeners, getFCMToken ,  } from '../../Components/Other/Firebasepushnoti';
 
 
 const BASE_URL="http://jemapps.in"

@@ -12,18 +12,13 @@ import {
   RefreshControl,
   ScrollView,
   Dimensions,
-
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchCamera } from 'react-native-image-picker';
 import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
-import { getUserInfo } from '../../../Constant/Api/DeliveyPersonaapis/Homeendpoint';
 import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
-import { getCurrentLocation, getDistanceManual } from '../../../Components/Delivery/GetCurrentlocarion';
-import { PunchInOut } from '../../../Constant/Api/DeliveyPersonaapis/InOutendpoint';
-import { Summery } from '../../../Constant/Api/DeliveyPersonaapis/Summeryendpoint';
 import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
@@ -32,14 +27,17 @@ const Office_Lat = 28.5298962;
 const Office_Long = 77.2822791;
 
 const DashboardScreen = ({ navigation }) => {
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState('John Doe');
   const [distance, setDistance] = useState(0);
   const [isOnline, setIsOnline] = useState(false);
-  const [summaryData, setSummaryData] = useState({ today: {}, yesterday: {}, monthly: {} });
-  const [loading, setLoading] = useState(true);
+  const [summaryData, setSummaryData] = useState({
+    today: { collected: 5, totalAmt: 1000, totalCollection: 10 },
+    yesterday: { collected: 4, totalAmt: 800 },
+    monthly: { collected: 20, totalAmt: 4000 },
+  });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
- 
 
   // Load isOnline state from AsyncStorage
   useEffect(() => {
@@ -50,51 +48,19 @@ const DashboardScreen = ({ navigation }) => {
           setIsOnline(JSON.parse(storedState));
         }
       } catch (err) {
-      
+        console.error('Error loading state:', err);
       }
     };
     loadState();
   }, []);
 
-  // Fetch user data and summary
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [userInfo, summary] = await Promise.all([getUserInfo(), Summery()]);
-  
-      if (userInfo.success) setUserName(userInfo.data.data.empName);
-      if (summary.success) setSummaryData(summary.data.data);
-  
-      // Attempt to get location
-      try {
-        const location = await getCurrentLocation();
-        const calculatedDistance = getDistanceManual(
-          Office_Lat,
-          Office_Long,
-          location.latitude,
-          location.longitude
-        );
-        setDistance(calculatedDistance);
-      } catch (locationError) {
-        console.warn('Location access denied or error occurred', locationError);
-        setDistance('Location access denied'); // Show a message or default value
-      }
-    } catch (err) {
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
+    // Simulate data refresh
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
   };
-  
 
   // Request camera permission
   const requestCameraPermission = async () => {
@@ -148,23 +114,10 @@ const DashboardScreen = ({ navigation }) => {
       setLoading(true);
 
       try {
-        const formData = new FormData();
-        formData.append('status', isOnline ? 'out' : 'in');
-        formData.append('image', {
-          uri: photo,
-          type: 'image/jpeg',
-          name: 'punch.jpg',
-        });
-
-        const punchResponse = await PunchInOut(formData);
-        if (punchResponse.success) {
-          const newStatus = !isOnline;
-          setIsOnline(newStatus);
-          await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
-          Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
-        } else {
-          Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
-        }
+        const newStatus = !isOnline;
+        setIsOnline(newStatus);
+        await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
+        Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
       } catch (err) {
         console.error('Error:', err);
         Alert.alert('Error', 'An error occurred while processing your request.');
@@ -192,8 +145,6 @@ const DashboardScreen = ({ navigation }) => {
       </LinearGradient>
     );
   };
-
-
 
   if (loading) {
     return (
@@ -275,49 +226,40 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.statsWrapper}>
         <View style={styles.statsWrapper}>
           <View style={styles.statsContainer}>
-            {/* Today Order Card */}
+            {/* Today Collection Card */}
             {renderStatCard(
-              'cart-outline',
-              summaryData.today?.delivered || 0,
-              'Today Order',
-              summaryData.today?.totalAmt || 0,
-              summaryData.today?.totalDelivery || 0
+              'cash-outline',
+              summaryData.today.collected,
+              'Today Collection',
+              summaryData.today.totalAmt,
+              summaryData.today.totalCollection
             )}
 
-            {/* Yesterday Order Card */}
+            {/* Yesterday Collection Card */}
             {renderStatCard(
-              'cart-outline',
-              summaryData.yesterday?.delivered || 0,
-              'Yesterday Order',
-              summaryData.yesterday?.totalAmt || 0
+              'cash-outline',
+              summaryData.yesterday.collected,
+              'Yesterday Collection',
+              summaryData.yesterday.totalAmt
             )}
 
-            {/* Monthly Order Card */}
+            {/* Monthly Collection Card */}
             {renderStatCard(
-              'cart-outline',
-              summaryData.monthly?.delivered || 0,
-              'Monthly Order',
-              summaryData.monthly?.totalAmt || 0,
-
+              'cash-outline',
+              summaryData.monthly.collected,
+              'Monthly Collection',
+              summaryData.monthly.totalAmt
             )}
           </View>
-
 
           <View style={{ marginTop: 20 }}>
             <SliderBox />
           </View>
         </View>
-
-
-
       </View>
     </ScrollView>
   );
 };
-
-
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -418,8 +360,5 @@ const styles = StyleSheet.create({
     color: 'red',
   },
 });
-
-
-
 
 export default DashboardScreen;

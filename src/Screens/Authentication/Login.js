@@ -4,8 +4,8 @@ import { TextInput, Button } from 'react-native-paper'; // Import Button from re
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Color } from '../../Constant/Constants';
 import { useAuth } from '../../Constant/Api/Authcontext';
-import NoInternetPopup from '../../Components/Nointernetpopup';
-import LoginfailPopup from '../../Components/Loginfail';
+import NoInternetPopup from '../../Components/Other/Nointernetpopup';
+import LoginfailPopup from '../../Components/Other/Loginfail';
 import axios from 'axios';
 
 const PhoneNumberScreen = ({ navigation }) => {
@@ -33,18 +33,19 @@ const PhoneNumberScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://jemapps.in/api/auth/employee-login', {
+      const response = await axios.post('http://jemapps.in/api/auth/employee-login2', {
         username: trimmedId,
         password: trimmedPassword,
       });
-
+       console.log("This is login data",response.data);
+       
       if (response?.status === 200 && response?.data) {
-        const { token, role, subrole } = response.data;
+        const { token, role=[]} = response.data;
 
         
       
         // Save authentication data to AuthContext
-        await saveAuthData(token, role, subrole);
+        await saveAuthData(token, role);
 
    
        

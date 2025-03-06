@@ -6,7 +6,7 @@ import { PrimaryButton } from '../../../Components/Other/Button';
 import { feedback } from '../../../Constant/Api/Apiendpoint'; // Replace with the actual API endpoint
 
 
-const EmployeeFeedbackScreen = () => {
+const CollectionFeedbackScreen = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [feedbackType, setFeedbackType] = useState('');
@@ -133,4 +133,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EmployeeFeedbackScreen;
+export default CollectionFeedbackScreen;

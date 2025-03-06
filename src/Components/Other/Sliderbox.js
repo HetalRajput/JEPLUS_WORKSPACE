@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { Color } from '../Constant/Constants';
-import { getBanner } from '../Constant/Api/Apiendpoint';
+import { Color } from '../../Constant/Constants';
+import { getBanner } from '../../Constant/Api/Apiendpoint';
 
 const { width: screenWidth } = Dimensions.get('window');
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Easing,Image } from 'react-native';
 import { requestUserPermission, setupFCMListeners } from './Firebasepushnoti'; // Ensure these functions are implemented correctly
-import { Color } from '../Constant/Constants';
+import { Color } from '../../Constant/Constants';
 
 const { width } = Dimensions.get('window'); // Dynamic width adjustment
 

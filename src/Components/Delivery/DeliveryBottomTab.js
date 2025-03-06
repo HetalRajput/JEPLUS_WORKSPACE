@@ -4,13 +4,23 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 // Import Screens
-import DeliveryHomeScreen from '../Screens/Delivery/Home/Home';
-import DeliveryProfileScreen from '../Screens/Delivery/Profile/Profile';
-import MapScreen from '../Screens/Delivery/Map/Map';
-import TagCardScreen from '../Screens/Delivery/Map/Tagscreen';
-import InvoiceScreen from '../Screens/Delivery/Map/InvoiceScreen';
-import PaymentScreen from '../Screens/Delivery/Map/Payment';
-import HistoryScreen from '../Screens/Delivery/History/History';
+import DeliveryHomeScreen from '../../Screens/Delivery/Home/Home';
+
+import DeliveryProfileScreen from '../../Screens/Delivery/Profile/Profile';
+import ProfileSwitcher from '../../Screens/Delivery/Profile/Profileswitcher';
+import DeliveryHelpAndSupportScreen from '../../Screens/Delivery/Profile/Help&Support';
+import DeliveryFeedbackScreen from '../../Screens/Delivery/Profile/Feedback';
+import DeliveryPrivacyPolicyScreen from '../../Screens/Delivery/Profile/PrivacyPolicy';
+import DeliveryProfileInfoScreen from '../../Screens/Delivery/Profile/Profileinformation';
+
+
+
+import MapScreen from '../../Screens/Delivery/Map/Map';
+import TagCardScreen from '../../Screens/Delivery/Map/Tagscreen';
+import InvoiceScreen from '../../Screens/Delivery/Map/InvoiceScreen';
+import PaymentScreen from '../../Screens/Delivery/Map/Payment';
+import HistoryScreen from '../../Screens/Delivery/History/History';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -36,6 +46,11 @@ const MapStack = () => (
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ProfileMain" component={DeliveryProfileScreen} />
+    <Stack.Screen name="Profile Information" component={DeliveryProfileInfoScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Help & Support" component={DeliveryHelpAndSupportScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Privacy Policy" component={DeliveryPrivacyPolicyScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Feedback" component={DeliveryFeedbackScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Switch Profile" component={ProfileSwitcher} options={{ headerShown: true }} />
   </Stack.Navigator>
 );
 

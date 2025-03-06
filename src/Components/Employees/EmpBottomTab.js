@@ -11,6 +11,7 @@ import EmployeeProfileInfoScreen from '../../Screens/Employee/ProfileScreen/Prof
 import EmployeeHelpAndSupportScreen from '../../Screens/Employee/ProfileScreen/Help&Support';
 import EmployeePrivacyPolicyScreen from '../../Screens/Employee/ProfileScreen/PrivacyPolicy';
 import EmployeeFeedbackScreen from '../../Screens/Employee/ProfileScreen/Feedback';
+import ProfileSwitcher from '../../Screens/Employee/ProfileScreen/Profileswitcher';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,6 +38,7 @@ const ProfileStack = () => (
     <Stack.Screen name="Help & Support" component={EmployeeHelpAndSupportScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Privacy Policies" component={EmployeePrivacyPolicyScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Feedback" component={EmployeeFeedbackScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Switch Profile" component={ProfileSwitcher} options={{ headerShown: true }} />
   </Stack.Navigator>
 );
 

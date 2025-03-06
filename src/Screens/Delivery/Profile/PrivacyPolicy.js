@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Color } from '../../../Constant/Constants';
 import { PrimaryButton } from '../../../Components/Other/Button';
 
-const EmployeePrivacyPolicyScreen = () => {
+const DeliveryPrivacyPolicyScreen = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
           
@@ -103,4 +103,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EmployeePrivacyPolicyScreen;
+export default DeliveryPrivacyPolicyScreen;
