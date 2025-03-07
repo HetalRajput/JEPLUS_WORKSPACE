@@ -6,15 +6,15 @@ import Icon from 'react-native-vector-icons/Ionicons';
 // Import Screens
 import HomeScreen from '../../Screens/Collection/Home/Home';
 import CollectionScreen from '../../Screens/Collection/Cutomer/Customer';
+import InvoiceScreen from '../../Screens/Collection/Cutomer/Invoice';
 import HistoryScreen from '../../Screens/Collection/History/History';
-
-
 import ProfileScreen from '../../Screens/Collection/Profile/Profile';
 import CollectionProfileInfoScreen from '../../Screens/Collection/Profile/Profileinformation';
 import CollectionHelpAndSupportScreen from '../../Screens/Collection/Profile/Help&Support';
 import CollectionPrivacyPolicyScreen from '../../Screens/Collection/Profile/PrivacyPolicy';
 import CollectionFeedbackScreen from '../../Screens/Collection/Profile/Feedback';
 import ProfileSwitcher from '../../Screens/Collection/Profile/Profileswitcher';
+import OrderScreen from '../../Screens/Collection/Order/Order'; // Import the OrderScreen
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -30,6 +30,8 @@ const HomeStack = () => (
 const CustomerStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="CustomerMain" component={CollectionScreen} />
+    <Stack.Screen name="Invoices" component={InvoiceScreen} options={{ headerShown: true }} />
+
   </Stack.Navigator>
 );
 
@@ -52,6 +54,13 @@ const HistoryStack = () => (
   </Stack.Navigator>
 );
 
+// Order Stack
+const OrderStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="OrderMain" component={OrderScreen} />
+  </Stack.Navigator>
+);
+
 // Bottom Tab Navigator
 const CollectionBottomTab = () => {
   return (
@@ -69,6 +78,8 @@ const CollectionBottomTab = () => {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'History') {
             iconName = focused ? 'time' : 'time-outline';
+          } else if (route.name === 'Order') {
+            iconName = focused ? 'cart' : 'cart-outline';
           }
 
           return <Icon name={iconName} size={24} color={color} />;
@@ -91,6 +102,7 @@ const CollectionBottomTab = () => {
     >
       <Tab.Screen name="Home" component={HomeStack} options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="Customer" component={CustomerStack} options={{ tabBarLabel: 'Customer' }} />
+      <Tab.Screen name="Order" component={OrderStack} options={{ tabBarLabel: 'Order' }} />
       <Tab.Screen name="History" component={HistoryStack} options={{ tabBarLabel: 'History' }} />
       <Tab.Screen name="Profile" component={ProfileStack} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
