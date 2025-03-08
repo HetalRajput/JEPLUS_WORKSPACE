@@ -146,6 +146,10 @@ const CollectionScreen = ({ navigation }) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1568ab" />
         </View>
+      ) : filteredInvoices.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No Task Assign Here</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredInvoices}
@@ -230,7 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Color.shadow,
     width: width * 0.6,
-
   },
   acno: {
     fontSize: 14,
@@ -299,6 +302,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    color: "#888",
   },
 });
 

@@ -64,7 +64,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   
       // Return the user info with a success status
            
-     console.log(response.data);
+
      
       
       return {
@@ -83,3 +83,32 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     }
   };
 
+  export const CollectionPay = async (formData) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+    console.log(">>><<<", formData);
+  
+    try {
+      const response = await axios.postForm(`http://jemapps.in/api/collection/update-invoice`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          'Content-Type': 'multipart/form-data', // Ensure the content type is set for form data
+        }
+      });
+  
+      console.log("this is the reponse data",response.data);
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };

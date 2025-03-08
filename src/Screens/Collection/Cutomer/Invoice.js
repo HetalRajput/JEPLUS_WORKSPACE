@@ -28,11 +28,12 @@ const InvoiceScreen = ({ navigation, route }) => {
           id: Math.random().toString(),
           party: invoice.BillNo || 'Unknown',
           date: invoice.Vdt ? invoice.Vdt.split('T')[0] : 'N/A',
-          invoiceNo: invoice.BillNo || 'N/A',
+          invoiceNo: invoice.VNo|| 'N/A',
           amount: invoice.Amt ? `₹${invoice.Amt.toFixed(2)}` : '₹0.00',
           rawAmount: invoice.Amt || 0, // Store raw amount for calculations
           diffday: invoice.diffday || 0,
           ostAmt: invoice.OSAmount || 0, // Store OS Amount for calculations
+          tagNo:tagNo,
         }));
         console.log(">>>>>>>>>>>>>>", formattedInvoices);
 
@@ -70,7 +71,7 @@ const InvoiceScreen = ({ navigation, route }) => {
       return;
     }
 
-    navigation.navigate('PaymentScreen', {
+    navigation.navigate('Pay', {
       selectedInvoices,
       totalOSAmount,
     });
@@ -121,7 +122,7 @@ const InvoiceScreen = ({ navigation, route }) => {
           {selectedInvoices.length > 0 && (
             <View style={styles.bottomBar}>
               <Text style={styles.totalAmountText}>
-                Total OS Amount: ₹{totalOSAmount.toFixed(2)}
+                Total OsAmt: ₹{totalOSAmount.toFixed(2)}
               </Text>
               <TouchableOpacity style={styles.payButton} onPress={handlePay}>
                 <Text style={styles.payButtonText}>Pay</Text>

@@ -15,6 +15,7 @@ import CollectionPrivacyPolicyScreen from '../../Screens/Collection/Profile/Priv
 import CollectionFeedbackScreen from '../../Screens/Collection/Profile/Feedback';
 import ProfileSwitcher from '../../Screens/Collection/Profile/Profileswitcher';
 import OrderScreen from '../../Screens/Collection/Order/Order'; // Import the OrderScreen
+import PaymentScreen from '../../Screens/Collection/Cutomer/Payment'; // Import the PaymentScreen
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -31,6 +32,7 @@ const CustomerStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="CustomerMain" component={CollectionScreen} />
     <Stack.Screen name="Invoices" component={InvoiceScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Pay" component={PaymentScreen} options={{ headerShown: true }} />
 
   </Stack.Navigator>
 );
