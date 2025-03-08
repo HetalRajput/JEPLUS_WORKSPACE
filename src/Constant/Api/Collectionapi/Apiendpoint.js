@@ -31,15 +31,18 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
  
     try {
       const token = await getToken(); // Get token from AsyncStorage
-      console.log(token);
+
+  
+   
       
-      const response = await axios.get(`http://jemapps.in/api/collection/get-tag`,{
+      const response = await axios.get(`http://jemapps.in/api/collection/get-tag/${startDate}/${endDate}`,{
         headers: {
           Authorization: `Bearer ${token}` // Add Bearer token to request headers
         }
       });
       // Handle the response data
      
+      console.log(response.data);
       
       if (response.data) {
         
@@ -50,11 +53,14 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       throw error;
     }
   };
-  export const getCustomerInvoice = async (TagNo , sMan) => {
+  export const getCustomerInvoice = async (TagNo , acno) => {
+
+    console.log(TagNo,acno);
+    
     try {
     
     
-      const response = await axios.get(`http://jemapps.in/api/delivery/get-invoice/${sMan}/${TagNo}`,);
+      const response = await axios.get(`http://jemapps.in/api/collection/get-invoice/${TagNo}/${acno}`,);
   
       // Return the user info with a success status
            

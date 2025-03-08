@@ -5,10 +5,10 @@ import { Color } from '../../../Constant/Constants';
 import { getCustomerInvoice } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 
 const InvoiceScreen = ({ navigation, route }) => {
-  const { tagNo, tagSMan, tagdate,Totalamt, tagStaus } = route.params; // Extract tag details from navigation params
+  const { tagNo, tagSMan, tagdate,Totalamt, tagStaus,acno } = route.params; // Extract tag details from navigation params
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-console.log(tagNo, tagSMan, tagdate, Totalamt);
+console.log(tagNo, tagSMan, tagdate, Totalamt,acno);
 
   useEffect(() => {
     fetchInvoices();
@@ -17,7 +17,7 @@ console.log(tagNo, tagSMan, tagdate, Totalamt);
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await getCustomerInvoice(tagNo, tagSMan);
+      const response = await getCustomerInvoice(tagNo, acno);
 
       if (response && response.data && Array.isArray(response.data)) {
      
