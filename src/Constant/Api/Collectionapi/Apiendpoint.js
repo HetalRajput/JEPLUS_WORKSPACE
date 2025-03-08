@@ -64,6 +64,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   
       // Return the user info with a success status
            
+     console.log(response.data);
      
       
       return {
