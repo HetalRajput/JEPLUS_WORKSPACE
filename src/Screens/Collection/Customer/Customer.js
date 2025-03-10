@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFocusEffect } from '@react-navigation/native';
 import { GetcollectionCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
 import { Color } from "../../../Constant/Constants";
 
@@ -24,6 +26,7 @@ const CollectionScreen = ({ navigation }) => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [loading, setLoading] = useState(false); // State for loading indicator
+  const [refreshing, setRefreshing] = useState(false); // State for pull-to-refresh
 
   // Function to fetch collection invoice
   const fetchCollectionInvoice = async (startDate, endDate) => {
@@ -45,15 +48,29 @@ const CollectionScreen = ({ navigation }) => {
     fetchCollectionInvoice(startDate, endDate);
   }, [startDate, endDate]);
 
-  const filteredInvoices = collectionInvoice.filter((invoice) =>
+  useFocusEffect(
+    useCallback(() => {
+      fetchCollectionInvoice(startDate, endDate);
+    }, [startDate, endDate])
+  );
+
+  // Sort invoices: "Pending" first, "Complete" last
+  const sortedInvoices = collectionInvoice.sort((a, b) => {
+    if (a.status === "Pending" && b.status === "Completed") return -1; // "Pending" comes first
+    if (a.status === "Completed" && b.status === "Pending") return 1; // "Complete" comes last
+    return 0; // No change in order for same status
+  });
+
+  // Filter invoices based on search
+  const filteredInvoices = sortedInvoices.filter((invoice) =>
     invoice.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.8}
-      onPress={() =>
+      activeOpacity={item.status === "Completed" ? 1 : 0.8} // Disable opacity change for completed items
+      onPress={item.status === "Completed" ? null : () =>
         navigation.navigate("Invoices", {
           tagNo: item.tagno,
           tagSMan: item.sman,
@@ -75,14 +92,14 @@ const CollectionScreen = ({ navigation }) => {
           <Text style={styles.billCountText}>Bills: {item.bill_count}</Text>
         </View>
       </View>
-  
+
       <View style={styles.divider} />
-  
+
       <View style={styles.addressContainer}>
         <Icon name="location-outline" size={18} color="gray" />
         <Text style={styles.address}>{item.address}</Text>
       </View>
-  
+
       <View style={styles.dueContainer}>
         <View style={styles.dueItem}>
           <Icon name="cash-outline" size={18} color="#1568ab" />
@@ -107,6 +124,12 @@ const CollectionScreen = ({ navigation }) => {
     if (selectedDate) {
       setEndDate(selectedDate);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchCollectionInvoice(startDate, endDate);
+    setRefreshing(false);
   };
 
   return (
@@ -153,9 +176,12 @@ const CollectionScreen = ({ navigation }) => {
       ) : (
         <FlatList
           data={filteredInvoices}
-          keyExtractor={(item) => item.acno.toString()}
+          keyExtractor={(item) => Math.random().toString(36).substring(7)}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       )}
     </View>
@@ -189,7 +215,7 @@ const styles = StyleSheet.create({
   },
   datePickerButton: {
     backgroundColor: "#fff",
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
     elevation: 3,
     shadowColor: "#000",

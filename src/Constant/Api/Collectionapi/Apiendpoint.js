@@ -112,3 +112,117 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
+
+  export const CollectionSummery = async () => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(` http://jemapps.in/api/collection/get-summary`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+  export const Getuser = async () => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/users/get-collection-person`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+ 
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+
+
+
+
+  export const CustomerSearch = async (query) => { // Accept query as a string, not an object
+    console.log(query);
+    
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/search-customer/${query}`);
+      
+     
+  
+      return {
+        success: true,
+        data: response,
+        message: "Customers fetched successfully",
+      };
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+  
+      return {
+        success: false,
+        data: [],
+        message: error.message || "Failed to fetch customers",
+      };
+    }
+  };
+  export const placeOrder = async (orderPayload) => {
+    try {
+      // Get token from AsyncStorage
+      const token = await getToken();
+     
+      
+  
+      // API endpoint
+      const url = 'http://jemapps.in/api/product/place-order';
+  
+      // Make POST request with the provided payload
+      const response = await axios.post(url, orderPayload, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          'Content-Type': 'application/json', // Ensure content type is set correctly
+        },
+      });
+     
+      console.log(response.data);
+      
+      // Handle successful response
+      if (response.status === 200 || response.status === 201) {
+        
+        return response;
+      } else {
+        throw new Error(`Unexpected response status: ${response.status}`);
+      }
+    } catch (error) {
+      // Log and rethrow error
+      console.error('Error placing order:', error.response?.data || error.message);
+      throw error;
+    }
+  };

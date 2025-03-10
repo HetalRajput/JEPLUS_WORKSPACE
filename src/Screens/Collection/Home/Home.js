@@ -20,6 +20,7 @@ import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
 import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import LinearGradient from 'react-native-linear-gradient';
+import { CollectionSummery, Getuser } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 
 const { width, height } = Dimensions.get('window');
 // Office Location
@@ -31,13 +32,61 @@ const DashboardScreen = ({ navigation }) => {
   const [distance, setDistance] = useState(0);
   const [isOnline, setIsOnline] = useState(false);
   const [summaryData, setSummaryData] = useState({
-    today: { collected: 5, totalAmt: 1000, totalCollection: 10 },
-    yesterday: { collected: 4, totalAmt: 800 },
-    monthly: { collected: 20, totalAmt: 4000 },
+    today: { collected: 0, totalAmt: 0, totalCollection: 0 },
+    yesterday: { collected: 0, totalAmt: 0 },
+    monthly: { collected: 0, totalAmt: 0 },
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  //collection summery
+
+  const fetchSummery = async () => {
+    try {
+      const response = await CollectionSummery();
+      if (response.success) {
+        const data = response.data;
+        const updatedSummaryData = {
+          today: {
+            collected: data[0].Collected,
+            totalAmt: data[0].totalAmount,
+            totalCollection: data[0].totalCollected, // ✅ This is correct
+          },
+          yesterday: {
+            collected: data[1].Collected,
+            totalAmt: data[1].totalAmount,
+            totalCollection: data[1].totalCollected, // ✅ Add this line
+          },
+          monthly: {
+            collected: data[2].Collected,
+            totalAmt: data[2].totalAmount,
+            totalCollection: data[2].totalCollected, // ✅ Add this line
+          },
+        };
+        setSummaryData(updatedSummaryData);
+      } else {
+        setError("Failed to fetch summary data");
+      }
+    } catch (err) {
+      console.error("Error fetching summary data:", err);
+      setError("An error occurred while fetching data");
+    }
+  };
+  
+
+  //fetch user data 
+  const fetchuser = async () => {
+
+    const response = await Getuser();
+    if (response.data) {
+      setUserName(response.data.Name)
+    }
+  };
+
+
+
+
 
   // Load isOnline state from AsyncStorage
   useEffect(() => {
@@ -51,6 +100,8 @@ const DashboardScreen = ({ navigation }) => {
         console.error('Error loading state:', err);
       }
     };
+    fetchuser();
+    fetchSummery();
     loadState();
   }, []);
 
@@ -240,7 +291,8 @@ const DashboardScreen = ({ navigation }) => {
               'cash-outline',
               summaryData.yesterday.collected,
               'Yesterday Collection',
-              summaryData.yesterday.totalAmt
+              summaryData.yesterday.totalAmt,
+              summaryData.yesterday.totalCollection || 0 // Fallback to 0 if undefined
             )}
 
             {/* Monthly Collection Card */}
@@ -248,7 +300,8 @@ const DashboardScreen = ({ navigation }) => {
               'cash-outline',
               summaryData.monthly.collected,
               'Monthly Collection',
-              summaryData.monthly.totalAmt
+              summaryData.monthly.totalAmt,
+              summaryData.monthly.totalCollection || 0 // Fallback to 0 if undefined
             )}
           </View>
 
@@ -323,6 +376,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.02,
     paddingVertical: height * 0.01,
   },
+  
   statCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -354,6 +408,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconContainer: {
+    backgroundColor: Color.lightOrange,
+    padding: 5,
+    borderRadius: 20
   },
   errorText: {
     fontSize: width * 0.04,

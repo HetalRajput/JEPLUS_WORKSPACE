@@ -21,19 +21,20 @@ const InvoiceScreen = ({ navigation, route }) => {
     try {
       setLoading(true);
       const response = await getCustomerInvoice(tagNo, acno);
-      console.log("<<<<<<<<<<<<<", response);
+      console.log("this is invoices>>>>>", response);
 
       if (response && response.data && response.data.length > 0) {
         const formattedInvoices = response.data.map((invoice) => ({
           id: Math.random().toString(),
           party: invoice.BillNo || 'Unknown',
           date: invoice.Vdt ? invoice.Vdt.split('T')[0] : 'N/A',
-          invoiceNo: invoice.VNo|| 'N/A',
+          invoiceNo: invoice.VNo || 'N/A',
           amount: invoice.Amt ? `₹${invoice.Amt.toFixed(2)}` : '₹0.00',
           rawAmount: invoice.Amt || 0, // Store raw amount for calculations
           diffday: invoice.diffday || 0,
           ostAmt: invoice.OSAmount || 0, // Store OS Amount for calculations
-          tagNo:tagNo,
+          tagNo: tagNo,
+          status: invoice.status || 'Pending', // Add status field
         }));
         console.log(">>>>>>>>>>>>>>", formattedInvoices);
 
@@ -57,7 +58,7 @@ const InvoiceScreen = ({ navigation, route }) => {
     setInvoices(updatedInvoices);
 
     // Update selected invoices and total OS Amount
-    const selected = updatedInvoices.filter((invoice) => invoice.picked);
+    const selected = updatedInvoices.filter((invoice) => invoice.picked && invoice.status === 'Pending');
     setSelectedInvoices(selected);
 
     const total = selected.reduce((sum, invoice) => sum + invoice.ostAmt, 0);
@@ -83,6 +84,14 @@ const InvoiceScreen = ({ navigation, route }) => {
       <View style={styles.cardHeader}>
         <Icon name="business-outline" size={24} color={Color.primeBlue} />
         <Text style={styles.partyName}>{item.party}</Text>
+        <View
+          style={[
+            styles.statusBadge,
+            item.status === 'Completed' ? styles.completedBadge : styles.pendingBadge,
+          ]}
+        >
+          <Text style={styles.statusText}>{item.status}</Text>
+        </View>
       </View>
       <View style={styles.detailsRow}>
         <Text style={styles.detailText}>📅 {item.date}</Text>
@@ -99,6 +108,7 @@ const InvoiceScreen = ({ navigation, route }) => {
           status={item.picked ? 'checked' : 'unchecked'}
           onPress={() => handleCheckboxToggle(item.id, item.ostAmt)}
           color={Color.primeBlue}
+          disabled={item.status == 'Completed'} // Disable checkbox for completed invoices
         />
         <Text style={styles.checkboxLabel}>Select Invoice</Text>
       </View>
@@ -138,26 +148,19 @@ const InvoiceScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4f4f4',
-    padding: 5,
+    backgroundColor: '#f5f5f5',
+  
   },
   listContainer: {
-    paddingBottom: 80,
+    paddingBottom: 80, // Add padding to avoid overlap with the bottom bar
   },
   card: {
     backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    marginVertical: 5,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    borderWidth: 0.5,
-    borderColor: Color.primeBlue,
-    borderLeftWidth: 5,
-    borderLeftColor: Color.primeBlue,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 5,
+    elevation: 2,
+    margin:7
   },
   cardHeader: {
     flexDirection: 'row',
@@ -165,40 +168,46 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   partyName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
-    color: '#333',
-  },
-  address: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    marginLeft: 8,
+    flex: 1,
   },
   detailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   detailText: {
-    fontSize: 15,
-    color: '#444',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#666',
   },
   amount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#27ae60',
+    color: Color.primeBlue,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   checkboxLabel: {
     marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
+  },
+  loadingText: {
+    textAlign: 'center',
+    marginTop: 20,
     fontSize: 16,
-    color: '#444',
+    color: '#666',
+  },
+  noDataText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
   },
   bottomBar: {
     position: 'absolute',
@@ -210,36 +219,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
+    elevation: 4,
   },
   totalAmountText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: Color.primeBlue,
   },
   payButton: {
     backgroundColor: Color.primeBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 8,
   },
   payButtonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 16,
   },
-  loadingText: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-    color: '#777',
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
   },
-  noDataText: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-    color: '#ff3333',
+  pendingBadge: {
+    backgroundColor: '#ffcc00',
+  },
+  completedBadge: {
+    backgroundColor: '#4caf50',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });
 

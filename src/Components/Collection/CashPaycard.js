@@ -59,25 +59,41 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
     setIsLoading(true);
 
     // Create the payload
-    const payload = {
-      image: cashPhoto,
-      data: paymentStatus.map((invoice) => ({
-        vno: String(invoice.invoiceNo),
-        tagno: String(invoice.tagNo),
-        amount: String(invoice.paidAmount), // Use paidAmount
-        paymethod: invoice.paymethod || "Cash",
-        CollBoyRemarks: invoice.CollBoyRemarks || "success",
-      })),
-      lat: 28.2342434,
-      long: 78.2234234,
-    };
+    const payload = new FormData();
+
+    // Add image as a file
+    if (cashPhoto) {
+      payload.append("image", {
+        uri: cashPhoto,
+        name: "cashPhoto.jpg", // Set a filename
+        type: "image/jpeg", // Set the MIME type
+      });
+    }
+
+    // Add lat and long as separate fields
+    payload.append("lat", "28.2342434");
+    payload.append("long", "78.2234234");
+
+    // Add invoices as a JSON string
+    payload.append(
+      "data",
+      JSON.stringify(
+        paymentStatus.map((invoice) => ({
+          vno: String(invoice.invoiceNo),
+          tagno: String(invoice.tagNo),
+          amount: String(invoice.paidAmount),
+          paymethod: invoice.paymethod || "Cash",
+          CollBoyRemarks: invoice.CollBoyRemarks || "success",
+        }))
+      )
+    );
 
     try {
       // Simulate API call
       const response = await CollectionPay(payload);
       console.log(response);
 
-      if (response.ok) {
+      if (response.success) {
         setSuccessModal(true);
       } else {
         throw new Error("Failed to submit payment");
@@ -94,10 +110,11 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
   const pickImage = async (setPhoto) => {
     const options = {
       mediaType: "photo",
-      quality: 0.5,
+      quality: 0.5, // Reduce quality to 50%
       width: 1080,
       height: 1920,
       saveToPhotos: false,
+      compressImageQuality: 0.5, // Compress image to 50% of original size
     };
 
     try {
@@ -114,6 +131,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
         width: 300,
         height: 400,
         mediaType: "photo",
+        compressImageQuality: 0.5, // Compress image to 50% of original size
       });
 
       const allowedFormats = ["jpg", "jpeg", "png"];
@@ -134,8 +152,14 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
   };
 
   const handleOk = () => {
+    // Reset all states
+    setAmount(totalAmount.toString());
+    setCashPhoto(null);
+    setPaymentStatus([]);
     setSuccessModal(false);
-    navigation.navigate("Home");
+
+    // Navigate back to the previous screen
+    navigation.navigate("CustomerMain");
   };
 
   const handleErrorModalClose = () => {
@@ -222,7 +246,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
             onPress={handlePayment}
             disabled={isLoading}
           >
-            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Collect</Text>}
+            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Submit</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -253,6 +277,8 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
     </ScrollView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   card: {

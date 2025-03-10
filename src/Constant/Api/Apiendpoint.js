@@ -105,15 +105,12 @@ export const getBanner = async () => {
 // Function to get all products with pagination
  export const getAllProducts = async (page = 1, limit = 10) => {
   try {
-    const token = await getToken(); // Get token from AsyncStorage
-    const response = await axios.get(`http://jemapps.in/api/product/all-productsV2`, {
+    
+    const response = await axios.get(`http://jemapps.in/api/product/all-products`, {
       params: {
         page,
         limit,
       },
-      headers: {
-        Authorization: `Bearer ${token}` // Add Bearer token to request headers
-      }
     });
 
     // Handle the response data
@@ -138,12 +135,7 @@ export const searchProduct = async (query) => {
   try {
     const token = await getToken(); // Get token from AsyncStorage
     const response = await axios.get(
-      `${BASE_URL}/api/product/searchV2/${encodeURIComponent(query)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}` // Add Bearer token to request headers
-        }
-      }
+      `${BASE_URL}/api/product/search/${encodeURIComponent(query)}`
     );
      
      

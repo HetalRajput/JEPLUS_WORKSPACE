@@ -25,4 +25,8 @@ export const cartState = atom({
   default: [], // initial state: empty cart
 });
 
+export const customerState = atom({
+  key: "customerState", 
+  default: null, // Initially no customer is selected
+});
 

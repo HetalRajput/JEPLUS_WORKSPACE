@@ -2,11 +2,11 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import { View,StyleSheet,Text } from 'react-native';
 // Import Screens
 import HomeScreen from '../../Screens/Collection/Home/Home';
-import CollectionScreen from '../../Screens/Collection/Cutomer/Customer';
-import InvoiceScreen from '../../Screens/Collection/Cutomer/Invoice';
+import CollectionScreen from '../../Screens/Collection/Customer/Customer';
+import InvoiceScreen from '../../Screens/Collection/Customer/Invoice';
 import HistoryScreen from '../../Screens/Collection/History/History';
 import ProfileScreen from '../../Screens/Collection/Profile/Profile';
 import CollectionProfileInfoScreen from '../../Screens/Collection/Profile/Profileinformation';
@@ -15,7 +15,13 @@ import CollectionPrivacyPolicyScreen from '../../Screens/Collection/Profile/Priv
 import CollectionFeedbackScreen from '../../Screens/Collection/Profile/Feedback';
 import ProfileSwitcher from '../../Screens/Collection/Profile/Profileswitcher';
 import OrderScreen from '../../Screens/Collection/Order/Order'; // Import the OrderScreen
-import PaymentScreen from '../../Screens/Collection/Cutomer/Payment'; // Import the PaymentScreen
+import PaymentScreen from '../../Screens/Collection/Customer/Payment'; // Import the PaymentScreen
+import { cartState } from '../../State/State';
+import { useRecoilValue } from 'recoil';
+import SearchScreen from '../../Screens/Collection/Order/SearchItem';
+import SearchCustomer from '../../Screens/Collection/Order/SearchCustomer';
+
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -52,7 +58,7 @@ const ProfileStack = () => (
 // History Stack
 const HistoryStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="HistoryMain" component={HistoryScreen} />
+    <Stack.Screen name="HistoryMain" component={HistoryScreen}  />
   </Stack.Navigator>
 );
 
@@ -60,11 +66,16 @@ const HistoryStack = () => (
 const OrderStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="OrderMain" component={OrderScreen} />
+    <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: true }}/>
+    <Stack.Screen name="SearchCustomer" component={SearchCustomer} options={{ headerShown: true }}/>
   </Stack.Navigator>
 );
 
 // Bottom Tab Navigator
 const CollectionBottomTab = () => {
+  const cart = useRecoilValue(cartState); // Get cart state
+  const cartItemCount = cart.length; // Count cart items
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -84,7 +95,16 @@ const CollectionBottomTab = () => {
             iconName = focused ? 'cart' : 'cart-outline';
           }
 
-          return <Icon name={iconName} size={24} color={color} />;
+          return (
+            <View>
+              <Icon name={iconName} size={24} color={color} />
+              {route.name === 'Order' && cartItemCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cartItemCount}</Text>
+                </View>
+              )}
+            </View>
+          );
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -110,5 +130,23 @@ const CollectionBottomTab = () => {
     </Tab.Navigator>
   );
 };
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -4,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
 
 export default CollectionBottomTab;
