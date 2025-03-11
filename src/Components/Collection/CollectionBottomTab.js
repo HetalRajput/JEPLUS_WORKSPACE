@@ -7,7 +7,7 @@ import { View,StyleSheet,Text } from 'react-native';
 import HomeScreen from '../../Screens/Collection/Home/Home';
 import CollectionScreen from '../../Screens/Collection/Customer/Customer';
 import InvoiceScreen from '../../Screens/Collection/Customer/Invoice';
-import HistoryScreen from '../../Screens/Collection/History/History';
+import CollectionHistoryScreen from '../../Screens/Collection/History/History';
 import ProfileScreen from '../../Screens/Collection/Profile/Profile';
 import CollectionProfileInfoScreen from '../../Screens/Collection/Profile/Profileinformation';
 import CollectionHelpAndSupportScreen from '../../Screens/Collection/Profile/Help&Support';
@@ -58,7 +58,7 @@ const ProfileStack = () => (
 // History Stack
 const HistoryStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="HistoryMain" component={HistoryScreen}  />
+    <Stack.Screen name="HistoryMain" component={CollectionHistoryScreen}  />
   </Stack.Navigator>
 );
 

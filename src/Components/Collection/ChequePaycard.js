@@ -1,40 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
   ScrollView,
+  Image,
   ActivityIndicator,
   Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { RadioButton } from "react-native-paper";
-import ImagePicker from "react-native-image-crop-picker";
 import { Color } from "../../Constant/Constants";
-import { Pay } from "../../Constant/Api/DeliveyPersonaapis/Delivered";
-import { getCurrentLocation } from "./GetCurrentlocarion";
-import { UndeliveredButton } from "../../Constant/Api/DeliveyPersonaapis/Undeliveredinv";
+import ImagePicker from "react-native-image-crop-picker";
+import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
+import { UncollectionButton } from "./Uncollection";
 
-export const ChequePayCard = ({ item, navigation }) => {
-  const [amount, setAmount] = useState(item.amount || "00");
-  const [invoicePhoto, setInvoicePhoto] = useState(null);
+
+
+export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) => {
+  const totalAmount = totalOSAmount;
+
+  const [amount, setAmount] = useState(totalAmount.toString());
   const [cashPhoto, setCashPhoto] = useState(null);
-  const [selectedReason, setSelectedReason] = useState("");
-  const [showReasons, setShowReasons] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
-  const [showReceivingButton, setShowReceivingButton] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [missingData, setMissingData] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState([]);
+
+  useEffect(() => {
+    const collectedAmount = parseFloat(amount) || 0;
+    let remainingAmount = collectedAmount;
+
+    const updatedPaymentStatus = selectedInvoices.map((invoice) => {
+      if (remainingAmount <= 0) {
+        return { ...invoice, status: "Unpaid", paidAmount: 0 };
+      } else if (remainingAmount >= invoice.rawAmount) {
+        remainingAmount -= invoice.rawAmount;
+        return { ...invoice, status: "Paid", paidAmount: invoice.rawAmount };
+      } else {
+        const paidAmount = remainingAmount;
+        remainingAmount = 0;
+        return { ...invoice, status: "Partially Paid", paidAmount };
+      }
+    });
+
+    setPaymentStatus(updatedPaymentStatus);
+  }, [amount, selectedInvoices]);
 
   const handlePayment = async () => {
     const missingFields = [];
     if (!amount) missingFields.push("Collected Amount");
-    if (!invoicePhoto) missingFields.push("Cash Photo");
-    if (!cashPhoto) missingFields.push("Invoice Photo");
 
     if (missingFields.length > 0) {
       setMissingData(`Please fill the following data: ${missingFields.join(", ")}`);
@@ -43,63 +60,69 @@ export const ChequePayCard = ({ item, navigation }) => {
     }
 
     setIsLoading(true);
+
+    // Create the payload
+    const payload = new FormData();
+
+    // Add image as a file
+    if (cashPhoto) {
+      payload.append("image", {
+        uri: cashPhoto,
+        name: "cashPhoto.jpg", // Set a filename
+        type: "image/jpeg", // Set the MIME type
+      });
+    }
+
+    // Add lat and long as separate fields
+    payload.append("lat", "28.2342434");
+    payload.append("long", "78.2234234");
+
+    // Add invoices as a JSON string
+    payload.append(
+      "data",
+      JSON.stringify(
+        paymentStatus.map((invoice) => ({
+          vno: String(invoice.invoiceNo),
+          tagno: String(invoice.tagNo),
+          amount: String(invoice.paidAmount),
+          paymethod: invoice.paymethod || "Cheque",
+          CollBoyRemarks: invoice.CollBoyRemarks || "success",
+        }))
+      )
+    );
+
     try {
-      const location = await getCurrentLocation();
-      console.log(location);
-
-      const formData = new FormData();
-      formData.append("Vno", item.id);
-      formData.append("Acno", item.acno);
-      formData.append("TagDt", item.date);
-      formData.append("SMan", item.sman);
-      formData.append("VAmount", item.amount);
-      formData.append("PaidAmount", amount);
-      formData.append("PayMethod", "Cash");
-      formData.append("DelStatus", "Delivered");
-      formData.append("remarks", selectedReason || "All Payment collected successfully");
-      formData.append("Lat", location.latitude || "0.0");
-      formData.append("Long", location.longitude || "0.0");
-
-      if (cashPhoto) {
-        formData.append("image2", {
-          uri: cashPhoto,
-          type: "image/jpeg",
-          name: "cash_payment.jpg",
-        });
-      }
-
-      if (invoicePhoto) {
-        formData.append("image1", {
-          uri: invoicePhoto,
-          type: "image/jpeg",
-          name: "invoice_payment.jpg",
-        });
-      }
-
-      const response = await Pay(formData);
+      // Simulate API call
+      const response = await CollectionPay(payload);
+      console.log(response);
 
       if (response.success) {
         setSuccessModal(true);
-        resetState();
       } else {
-        alert("Failed to submit payment.");
+        throw new Error("Failed to submit payment");
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while processing your request.");
+      console.error("Error submitting payment:", error);
+      setMissingData("Failed to submit payment. Please try again.");
+      setErrorModalVisible(true);
     } finally {
       setIsLoading(false);
     }
   };
 
   const pickImage = async (setPhoto) => {
+    const options = {
+      mediaType: "photo",
+      quality: 0.5, // Reduce quality to 50%
+      width: 1080,
+      height: 1920,
+      saveToPhotos: false,
+      compressImageQuality: 0.5, // Compress image to 50% of original size
+    };
+
     try {
-      const image = await ImagePicker.openCamera({
-        width: 300,
-        height: 400,
-      });
+      const image = await ImagePicker.openCamera(options);
       setPhoto(image.path);
-      setShowReceivingButton(true);
     } catch (error) {
       console.error("Error selecting image:", error.message);
     }
@@ -110,41 +133,36 @@ export const ChequePayCard = ({ item, navigation }) => {
       const image = await ImagePicker.openPicker({
         width: 300,
         height: 400,
-        mediaType: 'photo', // Restrict selection to images only
+        mediaType: "photo",
+        compressImageQuality: 0.5, // Compress image to 50% of original size
       });
-  
-      // Check if the selected image has a valid format (JPEG/PNG)
-      const allowedFormats = ['jpg', 'jpeg', 'png'];
-      const fileExtension = image.path.split('.').pop().toLowerCase();
-  
+
+      const allowedFormats = ["jpg", "jpeg", "png"];
+      const fileExtension = image.path.split(".").pop().toLowerCase();
+
       if (allowedFormats.includes(fileExtension)) {
         setPhoto(image.path);
-        setShowReceivingButton(true);
       } else {
         console.warn("Invalid file format. Please select a JPEG or PNG image.");
       }
     } catch (error) {
-      if (error.code === 'E_PICKER_CANCELLED') {
+      if (error.code === "E_PICKER_CANCELLED") {
         console.log("User cancelled image selection");
       } else {
         console.error("Error selecting image from gallery:", error.message);
       }
     }
   };
-  
 
-  const resetState = () => {
-    setAmount("");
-    setInvoicePhoto(null);
+  const handleOk = () => {
+    // Reset all states
+    setAmount(totalAmount.toString());
     setCashPhoto(null);
-    setSelectedReason("");
-    setShowReasons(false);
-    setShowReceivingButton(false);
-  };
-
-  const handleok = () => {
+    setPaymentStatus([]);
     setSuccessModal(false);
-    navigation.navigate("Map");
+
+    // Navigate back to the previous screen
+    navigation.navigate("CustomerMain");
   };
 
   const handleErrorModalClose = () => {
@@ -154,7 +172,7 @@ export const ChequePayCard = ({ item, navigation }) => {
   return (
     <ScrollView style={{ flex: 1 }}>
       <View style={styles.card}>
-        <Text style={styles.title}>Cheque Payment: ₹{item.amount}</Text>
+        <Text style={styles.title}>Cheque Payment: ₹{totalAmount}</Text>
         <Text style={styles.description}>Collect cheque from the customer.</Text>
 
         <TextInput
@@ -162,37 +180,13 @@ export const ChequePayCard = ({ item, navigation }) => {
           placeholder="Enter Collected Amount"
           keyboardType="numeric"
           value={amount}
-          onChangeText={(value) => {
-            setAmount(value);
-            setShowReasons(value && parseFloat(value) < item.amount);
-          }}
+          onChangeText={(value) => setAmount(value)}
         />
 
-        {showReasons && (
-          <View style={styles.radioContainer}>
-            <Text style={styles.reasonTitle}>Select a reason for less amount:</Text>
-            <RadioButton.Group onValueChange={setSelectedReason} value={selectedReason}>
-              <View style={styles.radioItem}>
-                <RadioButton value="less_cash" />
-                <Text>Customer gave less cheque amt</Text>
-              </View>
-              <View style={styles.radioItem}>
-                <RadioButton value="discount" />
-                <Text>Discount given by company</Text>
-              </View>
-              <View style={styles.radioItem}>
-                <RadioButton value="other" />
-                <Text>Other reason</Text>
-              </View>
-            </RadioButton.Group>
-          </View>
-        )}
-
-        {/* Capture Cash Photo and Upload from Gallery Buttons */}
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.captureButton1, styles.flexButton]}
-            onPress={() => pickImage(setInvoicePhoto)}
+            onPress={() => pickImage(setCashPhoto)}
           >
             <Icon name="camera" size={20} color="black" />
             <Text> Capture Cheque Photo</Text>
@@ -200,93 +194,83 @@ export const ChequePayCard = ({ item, navigation }) => {
 
           <TouchableOpacity
             style={[styles.captureButton2, { marginHorizontal: 0 }]}
-            onPress={() => pickImageFromGallery(setInvoicePhoto)}
+            onPress={() => pickImageFromGallery(setCashPhoto)}
           >
             <Icon name="image" size={20} color="white" />
           </TouchableOpacity>
         </View>
 
-        {invoicePhoto && (
-
+        {cashPhoto && (
           <View style={styles.imageContainer}>
-            <Image source={{ uri: invoicePhoto }} style={styles.previewImage} />
+            <Image source={{ uri: cashPhoto }} style={styles.previewImage} />
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setInvoicePhoto(null)}
+              onPress={() => setCashPhoto(null)}
             >
               <Icon name="close-circle" size={24} color="gray" />
             </TouchableOpacity>
           </View>
-
-
-
         )}
 
-        {/* Capture Receiving Photo Button (Conditionally Rendered) */}
-        {showReceivingButton && (
-          <>
-
-            <View style={styles.buttonRow1}>
-              <TouchableOpacity
-                style={[styles.captureButton1, styles.flexButton]}
-                onPress={() => pickImage(setCashPhoto)}
-              >
-                <Icon name="camera" size={20} color="white" />
-                <Text style={{color:"white"}}> Capture Invoice Photo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.captureButton2, { marginHorizontal: 0,backgroundColor:"white",borderWidth:1,borderColor:Color.primeBlue }]}
-                onPress={() => pickImageFromGallery(setCashPhoto)}
-              >
-                <Icon name="image" size={20} color={Color.primeBlue} />
-              </TouchableOpacity>
-            </View>
-
-
-            {cashPhoto && (
-              <View style={styles.imageContainer}>
-                <Image source={{ uri: cashPhoto }} style={styles.previewImage} />
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setCashPhoto(null)}
+        <View style={styles.paymentStatusContainer}>
+          <Text style={styles.paymentStatusTitle}>Payment Status:</Text>
+          {paymentStatus.map((invoice, index) => (
+            <View key={index} style={styles.invoiceStatusCard}>
+              <View style={styles.invoiceHeader}>
+                <Text style={styles.invoiceText}>
+                  Invoice: {invoice.invoiceNo}
+                </Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    invoice.status === "Paid" && styles.paidBadge,
+                    invoice.status === "Partially Paid" && styles.partialBadge,
+                    invoice.status === "Unpaid" && styles.unpaidBadge,
+                  ]}
                 >
-                  <Icon name="close-circle" size={24} color="gray" />
-                </TouchableOpacity>
+                  <Text style={styles.statusText}>{invoice.status}</Text>
+                </View>
               </View>
-            )}
-          </>
-        )}
+              <Text style={styles.invoiceText}>
+                Amount: ₹{invoice.rawAmount.toFixed(2)}
+              </Text>
+              {invoice.status === "Partially Paid" && (
+                <Text style={styles.invoiceText}>
+                  Paid Amount: ₹{invoice.paidAmount.toFixed(2)}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
 
         <View style={styles.buttonContainer}>
-          <View style={styles.undeliveredButton}>
-            <UndeliveredButton item={item} navigation={navigation} />
-          </View>
-
           <TouchableOpacity
             style={styles.deliveredButton}
             onPress={handlePayment}
             disabled={isLoading}
           >
-            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Delivered</Text>}
+            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Collect</Text>}
           </TouchableOpacity>
         </View>
+        <View style={{marginTop:10}}>
+        <UncollectionButton selectedInvoices={selectedInvoices} navigation={navigation}/>
+        </View>
+       
+
       </View>
 
-      {/* Success Modal */}
       <Modal visible={successModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Icon name="checkmark-circle" size={50} color={Color.green} />
             <Text style={styles.modalText}>Payment submitted successfully!</Text>
-            <TouchableOpacity onPress={handleok} style={styles.okButton}>
+            <TouchableOpacity onPress={handleOk} style={styles.okButton}>
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Error Modal */}
       <Modal visible={errorModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -302,11 +286,9 @@ export const ChequePayCard = ({ item, navigation }) => {
   );
 };
 
+
+
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
   card: {
     backgroundColor: "white",
     padding: 20,
@@ -339,42 +321,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: "#f9f9f9",
   },
-  radioContainer: {
-    marginBottom: 15,
-    padding: 10,
-    backgroundColor: "#f9f9f9",
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     borderRadius: 10,
-  },
-  reasonTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#444",
-  },
-  radioItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  radioLabel: {
-    fontSize: 14,
-    color: "#333",
-    marginLeft: 5,
-  },
-  captureButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Color.primeBlue,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: Color.primeBlue,
+    marginBottom: 10,
   },
   captureButton1: {
     flexDirection: "row",
@@ -391,56 +344,38 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: Color.primeBlue,
     paddingHorizontal: 20,
-    borderRadius: 9
+    borderRadius: 9,
   },
-  invcaptureButton2: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderColor: Color.primeBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 9
-  },
-  buttonText1: {
-    color: "black",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-  icon: {
-    marginRight: 5,
-  },
-  previewImage: {
-    width: "100%",
-    height: 250,
-    borderRadius: 12,
-    marginBottom: 10,
+  flexButton: {
+    flex: 1,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
   },
-  undeliveredButton: {
-    backgroundColor: "#e74c3c",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flex: 1,
-    alignItems: "center",
-    marginRight: 10,
-  },
   deliveredButton: {
     backgroundColor: "#2ecc71",
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 5,
     flex: 1,
     alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   imageContainer: {
     marginBottom: 10,
     borderRadius: 12,
     overflow: "hidden",
+  },
+  previewImage: {
+    width: "100%",
+    height: 250,
+    borderRadius: 12,
+    marginBottom: 10,
   },
   closeButton: {
     position: "absolute",
@@ -474,23 +409,48 @@ const styles = StyleSheet.create({
   okButtonText: {
     color: "white",
   },
-  buttonRow: {
+  paymentStatusContainer: {
+    marginTop: 20,
+  },
+  paymentStatusTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: "#333",
+  },
+  invoiceStatusCard: {
+    backgroundColor: "#f9f9f9",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  invoiceHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Color.primeBlue,
-    marginBottom: 10
+    alignItems: "center",
+    marginBottom: 10,
   },
-  buttonRow1: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderRadius: 10,
-    backgroundColor:Color.primeBlue,
-    marginBottom: 10
+  invoiceText: {
+    fontSize: 14,
+    color: "#444",
   },
-  flexButton: {
-    flex: 1,
-
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  paidBadge: {
+    backgroundColor: "#2ecc71",
+  },
+  partialBadge: {
+    backgroundColor: "#f1c40f",
+  },
+  unpaidBadge: {
+    backgroundColor: "#e74c3c",
+  },
+  statusText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

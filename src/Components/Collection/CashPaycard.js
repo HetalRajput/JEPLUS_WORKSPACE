@@ -14,6 +14,9 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Color } from "../../Constant/Constants";
 import ImagePicker from "react-native-image-crop-picker";
 import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
+import { UncollectionButton } from "./Uncollection";
+
+
 
 export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => {
   const totalAmount = totalOSAmount;
@@ -246,9 +249,14 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
             onPress={handlePayment}
             disabled={isLoading}
           >
-            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Submit</Text>}
+            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Collect</Text>}
           </TouchableOpacity>
         </View>
+        <View style={{marginTop:10}}>
+        <UncollectionButton selectedInvoices={selectedInvoices} navigation={navigation}/>
+        </View>
+       
+
       </View>
 
       <Modal visible={successModal} transparent animationType="slide">
@@ -348,8 +356,8 @@ const styles = StyleSheet.create({
   },
   deliveredButton: {
     backgroundColor: "#2ecc71",
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 5,
     flex: 1,
     alignItems: "center",
   },

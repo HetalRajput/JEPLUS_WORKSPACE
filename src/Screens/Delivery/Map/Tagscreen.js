@@ -66,7 +66,7 @@ const TagCardScreen = ({ navigation }) => {
   };
 
   const handleOutForDelivery = () => {
-    navigation.replace('Map');
+    navigation.navigate('Map');
   };
 
   const renderTagCard = ({ item }) => {
@@ -140,7 +140,7 @@ const TagCardScreen = ({ navigation }) => {
         {isDeliveryEnabled && (
           <TouchableOpacity style={styles.button} onPress={handleOutForDelivery}>
             <LinearGradient colors={[Color.primeBlue, '#1E90FF']} style={styles.gradient}>
-              <Text style={styles.buttonText}>Out for Delivery</Text>
+              <Text style={styles.buttonText}>Next</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}

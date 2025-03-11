@@ -176,7 +176,7 @@ const OrderScreen = ({ navigation }) => {
           />
         ) : (
           <View style={styles.emptyCartContainer}>
-            
+            <Text>Add Item</Text>
           </View>
         )}
       </View>
@@ -293,6 +293,10 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     backgroundColor: Color.primeBlue,
+    height:60,
+    width:60,
+    alignItems:"center",
+    justifyContent:"center"
   },
   fabCenter: {
     alignSelf: 'center',

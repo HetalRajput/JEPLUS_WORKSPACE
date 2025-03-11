@@ -86,7 +86,8 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   export const CollectionPay = async (formData) => {
     const token = await getToken(); // Get token from AsyncStorage
   
-    console.log(">>><<<", formData);
+   console.log("this is form data",formData);
+   
   
     try {
       const response = await axios.postForm(`http://jemapps.in/api/collection/update-invoice`, formData, {

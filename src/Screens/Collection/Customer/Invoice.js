@@ -10,11 +10,14 @@ const InvoiceScreen = ({ navigation, route }) => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoices, setSelectedInvoices] = useState([]); // Track selected invoices
+  const [totalSelectedAmount, setTotalSelectedAmount] = useState(0); // Track total selected amount
   const [totalOSAmount, setTotalOSAmount] = useState(0); // Track total OS Amount of selected invoices
-
   useEffect(() => {
     fetchInvoices();
   }, []);
+
+  // Fetch invoices from the API
+  const [totalAmount, setTotalAmount] = useState(0); // Track total invoice amount
 
   // Fetch invoices from the API
   const fetchInvoices = async () => {
@@ -36,9 +39,12 @@ const InvoiceScreen = ({ navigation, route }) => {
           tagNo: tagNo,
           status: invoice.status || 'Pending', // Add status field
         }));
-        console.log(">>>>>>>>>>>>>>", formattedInvoices);
 
         setInvoices(formattedInvoices);
+
+        // Calculate and set total amount of all invoices
+        const totalAmt = formattedInvoices.reduce((sum, invoice) => sum + invoice.rawAmount, 0);
+        setTotalAmount(totalAmt);
       } else {
         Alert.alert('No Data', 'No invoices found for this tag.');
       }
@@ -50,19 +56,25 @@ const InvoiceScreen = ({ navigation, route }) => {
     }
   };
 
+
   // Handle checkbox selection
-  const handleCheckboxToggle = (id, ostAmt) => {
+  const handleCheckboxToggle = (id, rawAmount, ostAmt) => {
     const updatedInvoices = invoices.map((invoice) =>
       invoice.id === id ? { ...invoice, picked: !invoice.picked } : invoice
     );
     setInvoices(updatedInvoices);
 
-    // Update selected invoices and total OS Amount
+    // Update selected invoices
     const selected = updatedInvoices.filter((invoice) => invoice.picked && invoice.status === 'Pending');
     setSelectedInvoices(selected);
 
-    const total = selected.reduce((sum, invoice) => sum + invoice.ostAmt, 0);
-    setTotalOSAmount(total);
+    // Calculate total OS Amount
+    const totalOS = selected.reduce((sum, invoice) => sum + invoice.ostAmt, 0);
+    setTotalOSAmount(totalOS);
+
+    // Calculate total selected amount
+    const totalSelected = selected.reduce((sum, invoice) => sum + invoice.rawAmount, 0);
+    setTotalSelectedAmount(totalSelected);
   };
 
   // Navigate to payment screen
@@ -106,10 +118,11 @@ const InvoiceScreen = ({ navigation, route }) => {
       <View style={styles.checkboxContainer}>
         <Checkbox
           status={item.picked ? 'checked' : 'unchecked'}
-          onPress={() => handleCheckboxToggle(item.id, item.ostAmt)}
+          onPress={() => handleCheckboxToggle(item.id, item.rawAmount, item.ostAmt)}
           color={Color.primeBlue}
-          disabled={item.status == 'Completed'} // Disable checkbox for completed invoices
+          disabled={item.status == 'Completed'} // Disable for completed invoices
         />
+
         <Text style={styles.checkboxLabel}>Select Invoice</Text>
       </View>
     </View>
@@ -131,14 +144,22 @@ const InvoiceScreen = ({ navigation, route }) => {
           />
           {selectedInvoices.length > 0 && (
             <View style={styles.bottomBar}>
+              <View>
               <Text style={styles.totalAmountText}>
-                Total OsAmt: ₹{totalOSAmount.toFixed(2)}
+                Total Amount: ₹{totalSelectedAmount.toFixed(2)}
               </Text>
+              <Text style={styles.totalAmountText}>
+                Total OS Amt: ₹{totalOSAmount.toFixed(2)}
+              </Text>
+              </View>
+ 
               <TouchableOpacity style={styles.payButton} onPress={handlePay}>
                 <Text style={styles.payButtonText}>Pay</Text>
               </TouchableOpacity>
             </View>
+
           )}
+
         </>
       )}
     </View>
@@ -149,7 +170,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  
+
   },
   listContainer: {
     paddingBottom: 80, // Add padding to avoid overlap with the bottom bar
@@ -160,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 5,
     elevation: 2,
-    margin:7
+    margin: 7
   },
   cardHeader: {
     flexDirection: 'row',

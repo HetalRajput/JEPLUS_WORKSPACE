@@ -27,13 +27,15 @@ const PaymentScreen = ({ route, navigation }) => {
         navigation={navigation} // Pass the navigation prop
         />;
       case "upi":
-        return <CashPayCard 
+        return <UpiPayCard
         selectedInvoices={selectedInvoices} // Pass the selected invoices
+        totalOSAmount={totalOSAmount}
         navigation={navigation} // Pass the navigation prop
         />;
       case "cheque":
-        return <CashPayCard 
+        return <ChequePayCard
         selectedInvoices={selectedInvoices} // Pass the selected invoices
+        totalOSAmount={totalOSAmount}
         navigation={navigation} // Pass the navigation prop
         />;
       default:
