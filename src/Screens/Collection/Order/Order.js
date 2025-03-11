@@ -176,7 +176,7 @@ const OrderScreen = ({ navigation }) => {
           />
         ) : (
           <View style={styles.emptyCartContainer}>
-            <Text style={styles.emptyCartText}>Your cart is empty</Text>
+            
           </View>
         )}
       </View>

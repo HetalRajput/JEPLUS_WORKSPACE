@@ -194,6 +194,8 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     }
   };
   export const placeOrder = async (orderPayload) => {
+    console.log("this is placed order payload",orderPayload);
+    
     try {
       // Get token from AsyncStorage
       const token = await getToken();

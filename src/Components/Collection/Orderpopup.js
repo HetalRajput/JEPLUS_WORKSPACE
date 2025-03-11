@@ -49,12 +49,9 @@ const OrderPopup = ({ visible, data, onClose, onConfirm, clearcart, customer }) 
     const fetchUserData = async () => {
       try {
         const response = await Getuser();
-        console.log(response.data.code);
-        
-        console.log(response);
         
         if (response.success) {
-          setSmanCode(response.code); // Set salesperson code
+          setSmanCode(response.data.code); // Set salesperson code
         } else {
           console.warn('Salesperson code not found in response');
         }
