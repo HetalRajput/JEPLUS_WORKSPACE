@@ -176,8 +176,6 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     
     try {
       const response = await axios.get(`http://jemapps.in/api/collection/search-customer/${query}`);
-      
-     
   
       return {
         success: true,
@@ -227,5 +225,33 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       // Log and rethrow error
       console.error('Error placing order:', error.response?.data || error.message);
       throw error;
+    }
+  };
+
+  export const GetCollectionhistory= async (startDate,endDate) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/collection-history/${startDate}/${endDate}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+ 
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Customers history fetched successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching customers collection history:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch customers collection history'
+      };
     }
   };

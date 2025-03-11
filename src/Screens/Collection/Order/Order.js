@@ -155,7 +155,7 @@ const OrderScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.cartContainer}>
-        {cart.length > 0 ? (
+        {cart.length > 0 && (
           <FlatList
             data={cart}
             keyExtractor={(item) => item.code.toString()}
@@ -174,12 +174,9 @@ const OrderScreen = ({ navigation }) => {
             }}
             contentContainerStyle={styles.cartList}
           />
-        ) : (
-          <View style={styles.emptyCartContainer}>
-            <Text>Add Item</Text>
-          </View>
         )}
       </View>
+
 
       {/* FAB for Adding Items */}
       {/* FAB for Adding Items */}
@@ -293,14 +290,14 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     backgroundColor: Color.primeBlue,
-    height:60,
-    width:60,
-    alignItems:"center",
-    justifyContent:"center"
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center"
   },
   fabCenter: {
     alignSelf: 'center',
-    bottom: '50%', // Center the FAB vertically
+    bottom: '38%', // Center the FAB vertically
   },
   fabBottomRight: {
     right: 16,

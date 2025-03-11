@@ -114,7 +114,8 @@ const InvoiceScreen = ({ navigation, route }) => {
         <Text style={styles.detailText}>⏲️ {item.diffday} Days</Text>
         <Text style={styles.detailText}>Total Amt: {item.amount}</Text>
       </View>
-
+      <Text style={styles.detailText}>Invoice No: {item. invoiceNo}</Text>
+     
       <View style={styles.checkboxContainer}>
         <Checkbox
           status={item.picked ? 'checked' : 'unchecked'}
