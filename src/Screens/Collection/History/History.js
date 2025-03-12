@@ -32,11 +32,12 @@ const CollectionHistory = ({ startDate, endDate }) => {
                 const formattedData = response.data.map(item => ({
                     id: item.VNo.toString(), // Use VNo as the unique ID
                     date: item.CollectedDate, // Use CollectedDate as the date
-                    amount: item.CollectedAmount, // Use CollectedAmount as the amount
+                    amount: item.Amt, // Use CollectedAmount as the amount
                     status: item.PayMethod === 'Cash' ? 'COLLECTED' : 'UNCOLLECTED', // Set status based on PayMethod
                     billNo: item.BillNo, // Additional field for BillNo
                     name: item.Name, // Additional field for Name
-                    invoiceNo: item.VNo
+                    invoiceNo: item.VNo,
+                    CollectedAmount:item.CollectedAmount
                 }));
                 setCollectionData(formattedData);
             }

@@ -20,7 +20,7 @@ import { cartState } from '../../State/State';
 import { useRecoilValue } from 'recoil';
 import SearchScreen from '../../Screens/Collection/Order/SearchItem';
 import SearchCustomer from '../../Screens/Collection/Order/SearchCustomer';
-
+import SummaryScreen from '../../Screens/Collection/Home/ShowSummery';
 
 
 const Tab = createBottomTabNavigator();
@@ -30,6 +30,7 @@ const Stack = createStackNavigator();
 const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="HomeMain" component={HomeScreen} />
+    <Stack.Screen name="Summary" component={SummaryScreen} options={{ headerShown: true }} />
   </Stack.Navigator>
 );
 

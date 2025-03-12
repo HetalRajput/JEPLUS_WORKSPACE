@@ -255,3 +255,40 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
+
+
+  export const Markasvisit = async (body) => {
+    console.log("this is placed order payload",body);
+    
+    try {
+      // Get token from AsyncStorage
+      const token = await getToken();
+     
+      
+  
+      // API endpoint
+      const url = 'http://jemapps.in/api/collection/update-visit-status';
+  
+      // Make POST request with the provided payload
+      const response = await axios.post(url, body, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          'Content-Type': 'application/json', // Ensure content type is set correctly
+        },
+      });
+     
+      console.log(response.data);
+      
+      // Handle successful response
+      if (response.status === 200 || response.status === 201) {
+        
+        return response;
+      } else {
+        throw new Error(`Unexpected response status: ${response.status}`);
+      }
+    } catch (error) {
+      // Log and rethrow error
+      console.error('Error placing order:', error.response?.data || error.message);
+      throw error;
+    }
+  };

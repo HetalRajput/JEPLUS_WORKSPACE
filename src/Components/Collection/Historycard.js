@@ -6,6 +6,8 @@ import moment from 'moment';
 import { Color } from '../../Constant/Constants';
 
 const CollectionHistoryCard = ({ item }) => {
+    console.log("this is item data",item);
+    
     return (
         <LinearGradient
             colors={['#ffffff', '#f2f8ff']} // Light gradient
@@ -36,6 +38,10 @@ const CollectionHistoryCard = ({ item }) => {
                 <View style={styles.cardRow}>
                     <Icon name="cash-outline" size={18} color="#2E7D32" />
                     <Text style={styles.cardText}>Amount: ₹{item.amount}</Text>
+                </View>
+                <View style={styles.cardRow}>
+                    <Icon name="cash-outline" size={18} color="#2E7D32" />
+                    <Text style={styles.cardText}>Collectd Amt: ₹{item.CollectedAmount}</Text>
                 </View>
                 <View style={styles.cardRow}>
                     <Icon name="person-circle-outline" size={18} color="#00796B" />

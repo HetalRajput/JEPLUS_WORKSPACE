@@ -14,9 +14,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Color } from "../../Constant/Constants";
 import ImagePicker from "react-native-image-crop-picker";
 import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
-import { UncollectionButton } from "./Uncollection";
-
-
+import { RadioButton } from "react-native-paper";
 
 export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) => {
   const totalAmount = totalOSAmount;
@@ -28,6 +26,9 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [missingData, setMissingData] = useState("");
   const [paymentStatus, setPaymentStatus] = useState([]);
+  const [showReasons, setShowReasons] = useState(false);
+  const [selectedReason, setSelectedReason] = useState(""); // Add selectedReason state
+
 
   useEffect(() => {
     const collectedAmount = parseFloat(amount) || 0;
@@ -52,7 +53,16 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
   const handlePayment = async () => {
     const missingFields = [];
     if (!amount) missingFields.push("Collected Amount");
-
+    if (showReasons && !selectedReason) {
+      setMissingData("Please select a reason for the lesser amount.");
+      setErrorModalVisible(true);
+      return;
+    }
+    if(!cashPhoto){
+      setMissingData("Please capture the cash image for a reason.");
+      setErrorModalVisible(true);
+      return; 
+    }
     if (missingFields.length > 0) {
       setMissingData(`Please fill the following data: ${missingFields.join(", ")}`);
       setErrorModalVisible(true);
@@ -85,8 +95,8 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
           vno: String(invoice.invoiceNo),
           tagno: String(invoice.tagNo),
           amount: String(invoice.paidAmount),
-          paymethod: invoice.paymethod || "Cheque",
-          CollBoyRemarks: invoice.CollBoyRemarks || "success",
+          paymethod: invoice.paymethod || "Cash",
+          CollBoyRemarks: selectedReason || "success", // Include selectedReason in remarks
         }))
       )
     );
@@ -160,6 +170,8 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
     setCashPhoto(null);
     setPaymentStatus([]);
     setSuccessModal(false);
+    setShowReasons(false);
+    setSelectedReason(""); // Reset selected reason
 
     // Navigate back to the previous screen
     navigation.navigate("CustomerMain");
@@ -175,13 +187,36 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
         <Text style={styles.title}>Cheque Payment: ₹{totalAmount}</Text>
         <Text style={styles.description}>Collect cheque from the customer.</Text>
 
+
         <TextInput
           style={styles.input}
           placeholder="Enter Collected Amount"
           keyboardType="numeric"
           value={amount}
-          onChangeText={(value) => setAmount(value)}
+          onChangeText={(value) => {
+            setAmount(value);
+            setShowReasons(value && parseFloat(value) < totalOSAmount);
+          }}
         />
+        {showReasons && (
+          <View style={styles.radioContainer}>
+            <Text style={styles.reasonTitle}>Select a reason for less amount:</Text>
+            <RadioButton.Group onValueChange={setSelectedReason} value={selectedReason}>
+              <View style={styles.radioItem}>
+                <RadioButton value="less_Cheque" />
+                <Text>Customer gave less Cheque amount</Text>
+              </View>
+              <View style={styles.radioItem}>
+                <RadioButton value="discount" />
+                <Text>Discount given by company</Text>
+              </View>
+              <View style={styles.radioItem}>
+                <RadioButton value="other" />
+                <Text>Other reason</Text>
+              </View>
+            </RadioButton.Group>
+          </View>
+        )}
 
         <View style={styles.buttonRow}>
           <TouchableOpacity
@@ -252,11 +287,6 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
             {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Collect</Text>}
           </TouchableOpacity>
         </View>
-        <View style={{marginTop:10}}>
-        <UncollectionButton selectedInvoices={selectedInvoices} navigation={navigation}/>
-        </View>
-       
-
       </View>
 
       <Modal visible={successModal} transparent animationType="slide">
@@ -433,6 +463,28 @@ const styles = StyleSheet.create({
   invoiceText: {
     fontSize: 14,
     color: "#444",
+  },
+  radioContainer: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+  },
+  reasonTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#444",
+  },
+  radioItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  radioLabel: {
+    fontSize: 14,
+    color: "#333",
+    marginLeft: 5,
   },
   statusBadge: {
     paddingHorizontal: 10,

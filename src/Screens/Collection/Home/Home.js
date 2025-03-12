@@ -73,7 +73,7 @@ const DashboardScreen = ({ navigation }) => {
       setError("An error occurred while fetching data");
     }
   };
-  
+
 
   //fetch user data 
   const fetchuser = async () => {
@@ -107,6 +107,7 @@ const DashboardScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    fetchSummery();
     // Simulate data refresh
     setTimeout(() => {
       setRefreshing(false);
@@ -178,22 +179,24 @@ const DashboardScreen = ({ navigation }) => {
     });
   };
 
-  const renderStatCard = (icon, value, label, amount, total = null) => {
+  const renderStatCard = (icon, value, label, amount, total = null, onPress) => {
     return (
-      <LinearGradient colors={['#ffffff', '#e0f7fa']} style={styles.statCard}>
-        <View style={styles.iconContainer}>
-          <Icon name={icon} size={32} color={Color.primeBlue} />
-        </View>
-        <Text style={styles.statLabel}>{label}</Text>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <LinearGradient colors={['#ffffff', '#e0f7fa']} style={styles.statCard}>
+          <View style={styles.iconContainer}>
+            <Icon name={icon} size={32} color={Color.primeBlue} />
+          </View>
+          <Text style={styles.statLabel}>{label}</Text>
 
-        {/* Value and Total Display */}
-        <Text style={styles.statValue}>
-          {value} {total !== null && <Text style={styles.totalText}>/ {total}</Text>}
-        </Text>
+          {/* Value and Total Display */}
+          <Text style={styles.statValue}>
+            {value} {total !== null && <Text style={styles.totalText}>/ {total}</Text>}
+          </Text>
 
-        {/* Amount Display */}
-        <Text style={styles.statAmount}>₹ {amount}</Text>
-      </LinearGradient>
+          {/* Amount Display */}
+          <Text style={styles.statAmount}>₹ {amount}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
     );
   };
 
@@ -283,7 +286,9 @@ const DashboardScreen = ({ navigation }) => {
               summaryData.today.collected,
               'Today Collection',
               summaryData.today.totalAmt,
-              summaryData.today.totalCollection
+              summaryData.today.totalCollection,
+              () => navigation.navigate("Summary", { range: "today" })
+
             )}
 
             {/* Yesterday Collection Card */}
@@ -292,8 +297,9 @@ const DashboardScreen = ({ navigation }) => {
               summaryData.yesterday.collected,
               'Yesterday Collection',
               summaryData.yesterday.totalAmt,
-              summaryData.yesterday.totalCollection || 0 // Fallback to 0 if undefined
-            )}
+              summaryData.yesterday.totalCollection || 0,
+              () =>navigation.navigate("Summary",{range:"yesterday"}) 
+               )}
 
             {/* Monthly Collection Card */}
             {renderStatCard(
@@ -301,8 +307,8 @@ const DashboardScreen = ({ navigation }) => {
               summaryData.monthly.collected,
               'Monthly Collection',
               summaryData.monthly.totalAmt,
-              summaryData.monthly.totalCollection || 0 // Fallback to 0 if undefined
-            )}
+              summaryData.monthly.totalCollection || 0,
+              () =>navigation.navigate("Summary",{range:"thismonth"})            )}
           </View>
 
           <View style={{ marginTop: 20 }}>
@@ -376,7 +382,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.02,
     paddingVertical: height * 0.01,
   },
-  
+
   statCard: {
     backgroundColor: '#fff',
     borderRadius: 12,

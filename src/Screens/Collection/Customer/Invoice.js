@@ -4,20 +4,24 @@ import { Checkbox } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Color } from '../../../Constant/Constants';
 import { getCustomerInvoice } from '../../../Constant/Api/Collectionapi/Apiendpoint';
+import { UncollectionButton } from '../../../Components/Collection/Uncollection';
 
 const InvoiceScreen = ({ navigation, route }) => {
-  const { tagNo, tagSMan, tagdate, tagStaus, acno } = route.params;
+  const { tagNo, acno } = route.params;
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoices, setSelectedInvoices] = useState([]); // Track selected invoices
   const [totalSelectedAmount, setTotalSelectedAmount] = useState(0); // Track total selected amount
   const [totalOSAmount, setTotalOSAmount] = useState(0); // Track total OS Amount of selected invoices
+  const [totalAmount, setTotalAmount] = useState(0); // Track total invoice amount
+
+  // Check if all invoices are pending
+  const allInvoicesPending = invoices.every((invoice) => invoice.status === 'Pending');
+
   useEffect(() => {
     fetchInvoices();
   }, []);
-
-  // Fetch invoices from the API
-  const [totalAmount, setTotalAmount] = useState(0); // Track total invoice amount
 
   // Fetch invoices from the API
   const fetchInvoices = async () => {
@@ -55,7 +59,6 @@ const InvoiceScreen = ({ navigation, route }) => {
       setLoading(false);
     }
   };
-
 
   // Handle checkbox selection
   const handleCheckboxToggle = (id, rawAmount, ostAmt) => {
@@ -114,14 +117,14 @@ const InvoiceScreen = ({ navigation, route }) => {
         <Text style={styles.detailText}>⏲️ {item.diffday} Days</Text>
         <Text style={styles.detailText}>Total Amt: {item.amount}</Text>
       </View>
-      <Text style={styles.detailText}>Invoice No: {item. invoiceNo}</Text>
-     
+      <Text style={styles.detailText}>Invoice No: {item.invoiceNo}</Text>
+
       <View style={styles.checkboxContainer}>
         <Checkbox
           status={item.picked ? 'checked' : 'unchecked'}
           onPress={() => handleCheckboxToggle(item.id, item.rawAmount, item.ostAmt)}
           color={Color.primeBlue}
-          disabled={item.status == 'Completed'} // Disable for completed invoices
+          disabled={item.status === 'Completed'} // Disable for completed invoices
         />
 
         <Text style={styles.checkboxLabel}>Select Invoice</Text>
@@ -146,27 +149,31 @@ const InvoiceScreen = ({ navigation, route }) => {
           {selectedInvoices.length > 0 && (
             <View style={styles.bottomBar}>
               <View>
-              <Text style={styles.totalAmountText}>
-                Total Amount: ₹{totalSelectedAmount.toFixed(2)}
-              </Text>
-              <Text style={styles.totalAmountText}>
-                Total OS Amt: ₹{totalOSAmount.toFixed(2)}
-              </Text>
+                <Text style={styles.totalAmountText}>
+                  Total Amount: ₹{totalSelectedAmount.toFixed(2)}
+                </Text>
+                <Text style={styles.totalAmountText}>
+                  Total OS Amt: ₹{totalOSAmount.toFixed(2)}
+                </Text>
               </View>
- 
+
               <TouchableOpacity style={styles.payButton} onPress={handlePay}>
                 <Text style={styles.payButtonText}>Pay</Text>
               </TouchableOpacity>
             </View>
-
           )}
 
+          {/* Show "Not Collected" button only if all invoices are pending */}
+          {allInvoicesPending && !selectedInvoices.length > 0 && (
+            <View style={styles.uncollectContainer}>
+              <UncollectionButton selectedInvoices={invoices} navigation={navigation} />
+            </View>
+          )}
         </>
       )}
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -276,6 +283,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
+  uncollectContainer: { position: 'absolute', bottom: 10, width: '100%', paddingHorizontal: 10 },
+
 });
 
 export default InvoiceScreen;
