@@ -9,13 +9,15 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
+  Keyboard
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
-import { GetcollectionCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
+import { GetcollectionCustomer, SearchCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
 import { Color } from "../../../Constant/Constants";
 import MarkAsVisitPopup from "../../../Components/Collection/Markasvisit";
+
 const { width } = Dimensions.get("window");
 
 const CollectionScreen = ({ navigation }) => {
@@ -54,14 +56,35 @@ const CollectionScreen = ({ navigation }) => {
     }
   };
 
+  const handleSearch = async (query) => {
+    if (query.trim() === "") {
+      fetchCollectionInvoice(startDate, endDate);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await SearchCustomer(query);
+      setCollectionInvoice(response.data);
+    } catch (error) {
+      console.error("Error searching customer:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchCollectionInvoice(startDate, endDate);
-  }, [startDate, endDate]);
+    if (search === "") {
+      fetchCollectionInvoice(startDate, endDate);
+    }
+  }, [startDate, endDate, search]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchCollectionInvoice(startDate, endDate);
-    }, [startDate, endDate])
+      if (search === "") {
+        fetchCollectionInvoice(startDate, endDate);
+      }
+    }, [startDate, endDate, search])
   );
 
   const sortedInvoices = collectionInvoice.sort((a, b) => {
@@ -76,13 +99,11 @@ const CollectionScreen = ({ navigation }) => {
 
   const handleCardPress = (item) => {
     if (item.IsVisited === "true") {
-      // Navigate directly to InvoiceScreen
       navigation.navigate("Invoices", {
         tagNo: item.tagno,
         acno: item.acno,
       });
     } else {
-      // Show popup for unvisited items
       handleOpenPopup(item);
     }
   };
@@ -90,7 +111,7 @@ const CollectionScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      activeOpacity={0.8}
+      activeOpacity={.8}
       onPress={() => handleCardPress(item)}
     >
       <View style={styles.cardHeader}>
@@ -108,17 +129,17 @@ const CollectionScreen = ({ navigation }) => {
 
       <View style={styles.divider} />
 
-       <View style={{flexDirection:"row",justifyContent:"space-between"}}>
-      <View style={styles.routeContainer}>
-        <Icon name="map-outline" size={18} color="gray" />
-        <Text style={styles.routeText}>Route: {item.route_name}</Text>
-      </View>
-      <Icon
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <View style={styles.routeContainer}>
+          <Icon name="map-outline" size={18} color="gray" />
+          <Text style={styles.routeText}>Route: {item.route_name}</Text>
+        </View>
+        <Icon
           name={item.IsVisited === "false" ? "eye-off-outline" : "eye-outline"}
           size={22}
           color={item.IsVisited === "false" ? "red" : "green"}
-      />
-        </View>
+        />
+      </View>
 
       <View style={styles.tagContainer}>
         <Icon name="pricetag-outline" size={18} color="gray" />
@@ -138,7 +159,6 @@ const CollectionScreen = ({ navigation }) => {
         <View style={[styles.statusBadge, item.status === "Pending" ? styles.pending : styles.complete]}>
           <Text style={styles.statusText}>{item.status === "Pending" ? "Pending" : "Complete"}</Text>
         </View>
-
       </View>
     </TouchableOpacity>
   );
@@ -159,6 +179,7 @@ const CollectionScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    setSearch(""); // Reset the search query on refresh
     await fetchCollectionInvoice(startDate, endDate);
     setRefreshing(false);
   };
@@ -170,7 +191,10 @@ const CollectionScreen = ({ navigation }) => {
         placeholder="Search Customer"
         placeholderTextColor="#888"
         value={search}
-        onChangeText={setSearch}
+        onChangeText={(text) => {
+          setSearch(text);
+          handleSearch(text); // Trigger search API call
+        }}
       />
       <View style={styles.datePickerContainer}>
         <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowStartDatePicker(true)}>
@@ -200,13 +224,13 @@ const CollectionScreen = ({ navigation }) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1568ab" />
         </View>
-      ) : filteredInvoices.length === 0 ? (
+      ) : collectionInvoice.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No Task Assign Here</Text>
         </View>
       ) : (
         <FlatList
-          data={filteredInvoices}
+          data={search ? filteredInvoices : collectionInvoice} // Use search results if search query exists
           keyExtractor={(item) => Math.random().toString(36).substring(7)}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
@@ -292,14 +316,12 @@ const styles = StyleSheet.create({
   },
   nameWrapper: {
     marginLeft: 8,
-    width:"73%"
+    width: "73%"
   },
   name: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#1568ab",
-   
-    
   },
   acno: {
     fontSize: 14,
@@ -378,7 +400,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     fontWeight: "bold",
-    color:"white"
+    color: "white"
   },
   loadingContainer: {
     flex: 1,

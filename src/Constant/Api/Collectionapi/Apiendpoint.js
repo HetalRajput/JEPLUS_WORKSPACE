@@ -114,12 +114,12 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     }
   };
 
-  export const CollectionSummery = async () => {
+  export const CollectionSummery = async (sdate,edate) => {
     const token = await getToken(); // Get token from AsyncStorage
   
   
     try {
-      const response = await axios.get(` http://jemapps.in/api/collection/get-summary`,{
+      const response = await axios.get(`http://jemapps.in/api/collection/get-summary2/${sdate}/${edate}`,{
         headers: {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
@@ -290,5 +290,60 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       // Log and rethrow error
       console.error('Error placing order:', error.response?.data || error.message);
       throw error;
+    }
+  };
+
+
+  export const SummeryDetail = async (sdate,edate) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/get-summary-details/${sdate}/${edate}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+
+  export const SearchCustomer = async (query) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/find-customer-tags/${query}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
     }
   };

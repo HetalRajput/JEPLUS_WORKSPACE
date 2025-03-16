@@ -33,7 +33,7 @@ const PhoneNumberScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://jemapps.in/api/auth/employee-login2', {
+      const response = await axios.post('http://jemapps.in/api/auth/hybrid-login', {
         username: trimmedId,
         password: trimmedPassword,
       });

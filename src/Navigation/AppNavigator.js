@@ -8,6 +8,7 @@ import IntroSlider from '../Screens/Authentication/Appintroslider';
 import EmpBottomTab from '../Components/Employees/EmpBottomTab';
 import DeliveryBottomTab from '../Components/Delivery/DeliveryBottomTab';
 import CollectionBottomTab from '../Components/Collection/CollectionBottomTab';
+import RoleNotActiveScreen from '../Screens/Authentication/norolescreen';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,10 @@ const AppNavigator = () => {
             )}
             {activeRole === 'COLLECTION' && (
               <Stack.Screen name="CollectionBottomTab" component={CollectionBottomTab} options={{ headerShown: false }} />
+            )}
+            {/* Fallback screen for unmatched roles */}
+            {!['EMPLOYEE', 'DELIVERY', 'COLLECTION'].includes(activeRole) && (
+              <Stack.Screen name="RoleNotActive" component={RoleNotActiveScreen} options={{ headerShown: false }} />
             )}
           </>
         )}

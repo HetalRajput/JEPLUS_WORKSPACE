@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { GetcollectionCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
+import { SummeryDetail } from "../../../Constant/Api/Collectionapi/Apiendpoint";
 import { Color } from "../../../Constant/Constants";
 
 const SummaryScreen = ({ route }) => {
   const { range } = route.params;
-  
+
   const [summaryData, setSummaryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sDate, setSDate] = useState(null);
   const [eDate, setEDate] = useState(null);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     setDateRange();
@@ -40,34 +42,50 @@ const SummaryScreen = ({ route }) => {
       startDate.setDate(today.getDate() - 1);
       endDate = new Date(startDate);
     } else if (range === "thismonth") {
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1); // First day of current month
-        endDate = today; // Current date
-      
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = today;
     }
 
     setSDate(startDate);
     setEDate(endDate);
   };
 
-  const fetchSummaryData = async () => {
-    setLoading(true);
+  const fetchSummaryData = async (nextPage = 1) => {
+    if (nextPage > 1) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     const formattedStartDate = sDate.toISOString().slice(0, 10);
     const formattedEndDate = eDate.toISOString().slice(0, 10);
 
     try {
-      const response = await GetcollectionCustomer(formattedStartDate, formattedEndDate);
-      console.log("this is response data>>>>>>>",response.data);
+      const response = await SummeryDetail(formattedStartDate, formattedEndDate, nextPage);
+      console.log("Response Data:", response.data);
+
+      if (nextPage === 1) {
+        setSummaryData(response.data);
+      } else {
+        setSummaryData((prevData) => [...prevData, ...response.data]);
+      }
       
-      setSummaryData(response.data);
+      setPage(nextPage);
     } catch (error) {
       console.error("Error fetching summary data:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const renderItem = ({ item }) => (
-    
+  const loadMoreData = () => {
+    if (!loadingMore) {
+      fetchSummaryData(page + 1);
+    }
+  };
+
+  const renderItem = useCallback(({ item }) => (
     <View style={styles.card}>
       <View style={styles.row}>
         <Icon name="storefront-outline" size={24} color="#1568ab" />
@@ -93,13 +111,14 @@ const SummaryScreen = ({ route }) => {
         <Text style={styles.statusText}>{item.status}</Text>
       </View>
     </View>
-  );
+  ), []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>
         Summary ({sDate ? sDate.toLocaleDateString() : ""} - {eDate ? eDate.toLocaleDateString() : ""})
       </Text>
+
       {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color="#1568ab" />
@@ -111,9 +130,16 @@ const SummaryScreen = ({ route }) => {
       ) : (
         <FlatList
           data={summaryData}
-          keyExtractor={(item) => Math.random().toString()}
+          keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
           renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
+          initialNumToRender={10} 
+          windowSize={5} 
+          maxToRenderPerBatch={10} 
+          onEndReached={loadMoreData}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator size="small" color="#1568ab" style={{ marginVertical: 10 }} /> : null
+          }
         />
       )}
     </View>
@@ -126,7 +152,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-   
   },
   header: {
     fontSize: 18,
@@ -158,7 +183,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    margin:5
+    margin: 5,
   },
   row: {
     flexDirection: "row",
