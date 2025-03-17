@@ -115,17 +115,20 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   };
 
   export const CollectionSummery = async (sdate,edate) => {
+    console.log(sdate,edate);
+    
     const token = await getToken(); // Get token from AsyncStorage
   
   
     try {
-      const response = await axios.get(`http://jemapps.in/api/collection/get-summary2/${sdate}/${edate}`,{
+      const response = await axios.get(`http://jemapps.in/api/collection/get-summary`,{
         headers: {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
       });
   
-  
+      console.log("this is sumary data",response.data);
+      
       return {
         success: true,
         data: response.data,
@@ -337,6 +340,34 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
         success: true,
         data: response.data,
         message: 'Invoice posted successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+
+  export const GetCollectionOrderHistory = async (query) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/get-order-history-by-sman/2025-03-01/2025-03-30`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log(response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get collection successfully'
       };
     } catch (error) {
       console.error('Error posting invoice:', error);

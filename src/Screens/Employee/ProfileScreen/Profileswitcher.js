@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { useAuth } from '../../../Constant/Api/Authcontext';
 
@@ -14,7 +14,10 @@ const ProfileSwitcher = () => {
   const { role, activeRole, switchProfile } = useAuth();
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <Text style={styles.header}>Select Your Role</Text>
 
       {role.map((r) => (
@@ -35,17 +38,18 @@ const ProfileSwitcher = () => {
           </Text>
         </TouchableOpacity>
       ))}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,  
+    flex: 1,
+  },
+  contentContainer: {
     padding: 20,
     alignItems: 'center',
-    justifyContent:"center",
-    
+    justifyContent: 'center',
   },
   header: {
     fontSize: 20,

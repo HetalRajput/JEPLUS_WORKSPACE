@@ -6,7 +6,7 @@ import moment from 'moment';
 import { Color } from '../../Constant/Constants';
 
 const CollectionHistoryCard = ({ item }) => {
-    console.log("this is item data",item);
+
     
     return (
         <LinearGradient

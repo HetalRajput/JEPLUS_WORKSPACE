@@ -1,60 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Dimensions, RefreshControl
+    View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Dimensions, RefreshControl, ActivityIndicator
 } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { Color } from '../../../Constant/Constants';
-import { GetCollectionhistory } from '../../../Constant/Api/Collectionapi/Apiendpoint';
+import { GetCollectionhistory, GetCollectionOrderHistory } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import CollectionHistoryCard from '../../../Components/Collection/Historycard';
 
+// Constants
+const { width } = Dimensions.get('window');
 
+// Collection History Component
 const CollectionHistory = ({ startDate, endDate }) => {
     const [collectionData, setCollectionData] = useState([]);
-    const [refreshing, setRefreshing] = useState(false); // State for refresh control
+    const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        fetchCollection(startDate, endDate);
-    }, [startDate, endDate]);
-
-    const fetchCollection = async (startDate, endDate) => {
+    const fetchCollection = useCallback(async () => {
         try {
-            setRefreshing(true); // Start refreshing animation
+            setRefreshing(true);
+            setLoading(true);
             const formattedStartDate = moment(startDate).format('YYYY-MM-DD');
             const formattedEndDate = moment(endDate).format('YYYY-MM-DD');
 
             const response = await GetCollectionhistory(formattedStartDate, formattedEndDate);
-            console.log("API Response:", response.data);
-
             if (response.success) {
-                // Map the API response to the required format
                 const formattedData = response.data.map(item => ({
-                    id: item.VNo.toString(), // Use VNo as the unique ID
-                    date: item.CollectedDate, // Use CollectedDate as the date
-                    amount: item.Amt, // Use CollectedAmount as the amount
-                    status: item.PayMethod === 'Cash' ? 'COLLECTED' : 'UNCOLLECTED', // Set status based on PayMethod
-                    billNo: item.BillNo, // Additional field for BillNo
-                    name: item.Name, // Additional field for Name
+                    id: item.VNo.toString(),
+                    date: item.CollectedDate,
+                    amount: item.Amt,
+                    status: item.PayMethod === 'Cash' ? 'COLLECTED' : 'UNCOLLECTED',
+                    billNo: item.BillNo,
+                    name: item.Name,
                     invoiceNo: item.VNo,
-                    CollectedAmount:item.CollectedAmount
+                    CollectedAmount: item.CollectedAmount
                 }));
                 setCollectionData(formattedData);
+            } else {
+                setError('Failed to fetch collection history.');
             }
-        } catch (error) {
-            console.error("Error fetching collection history:", error);
+        } catch (err) {
+            setError('An error occurred while fetching data.');
+            console.error("Error fetching collection history:", err);
         } finally {
-            setRefreshing(false); // Stop refreshing animation
+            setRefreshing(false);
+            setLoading(false);
         }
-    };
+    }, [startDate, endDate]);
+
+    useEffect(() => {
+        fetchCollection();
+    }, [fetchCollection]);
 
     const onRefresh = () => {
-        fetchCollection(startDate, endDate); // Fetch data again with current dates
+        fetchCollection();
     };
 
     const renderItem = ({ item }) => (
-          <CollectionHistoryCard item={item}/>
+        <CollectionHistoryCard item={item} />
     );
+
+    if (loading) {
+        return <ActivityIndicator size="large" color={Color.primeBlue} style={styles.loader} />;
+    }
+
+    if (error) {
+        return <Text style={styles.errorText}>{error}</Text>;
+    }
 
     return (
         <View style={styles.tabContainer}>
@@ -66,9 +81,9 @@ const CollectionHistory = ({ startDate, endDate }) => {
                 contentContainerStyle={{ paddingBottom: 20 }}
                 refreshControl={
                     <RefreshControl
-                        refreshing={refreshing} // Refresh control state
-                        onRefresh={onRefresh} // Function to call when refreshing
-                        colors={[Color.primeBlue]} // Customize the loading spinner color
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Color.primeBlue]}
                     />
                 }
             />
@@ -76,24 +91,33 @@ const CollectionHistory = ({ startDate, endDate }) => {
     );
 };
 
-const OrderHistory = () => {
-    const [orderData, setOrderData] = useState([
-        { id: '1', date: '2023-10-01', items: 5, amount: 500, status: 'COMPLETED' },
-        { id: '2', date: '2023-10-02', items: 3, amount: 300, status: 'UNCOLLECTED' },
-        { id: '3', date: '2023-10-03', items: 2, amount: 200, status: 'COMPLETED' },
-    ]);
-    const [refreshing, setRefreshing] = useState(false); // State for refresh control
+// Order History Component
+const OrderHistory = ({ orderData }) => {
+    console.log(orderData);
+    
+    const [refreshing, setRefreshing] = useState(false);
+
+    const formattedOrderData = useMemo(() => {
+        return orderData.map(item => ({
+            id: item.Ordno.toString(),
+            date: moment(item.Odt).format('YYYY-MM-DD'),
+            items: item.order_count,
+            amount: item.amt,
+            status: item.order_status,
+            name:item.name
+        }));
+    }, [orderData]);
 
     const onRefresh = () => {
-        setRefreshing(true); // Start refreshing animation
-        // Simulate fetching new data
-        setTimeout(() => {
-            setRefreshing(false); // Stop refreshing animation
-        }, 1000);
+        setRefreshing(true);
+
+        setTimeout(() => setRefreshing(false), 1000); // Simulate refresh
     };
 
     const renderItem = ({ item }) => (
+    
         <View style={styles.card}>
+            <Text style={styles.name}># {item.name}</Text>
             <Text style={styles.cardDate}>📅 {item.date}</Text>
             <Text style={styles.cardAmount}>📦 {item.items} Items</Text>
             <Text style={styles.cardAmount}>💰 ₹{item.amount}</Text>
@@ -106,16 +130,16 @@ const OrderHistory = () => {
     return (
         <View style={styles.tabContainer}>
             <FlatList
-                data={orderData}
+                data={formattedOrderData}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={<Text style={styles.emptyText}>No Order History</Text>}
                 contentContainerStyle={{ paddingBottom: 20 }}
                 refreshControl={
                     <RefreshControl
-                        refreshing={refreshing} // Refresh control state
-                        onRefresh={onRefresh} // Function to call when refreshing
-                        colors={[Color.primeBlue]} // Customize the loading spinner color
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Color.primeBlue]}
                     />
                 }
             />
@@ -123,22 +147,39 @@ const OrderHistory = () => {
     );
 };
 
+// Main Screen Component
 const CollectionHistoryScreen = () => {
     const [startDate, setStartDate] = useState(moment().subtract(7, 'days').toDate());
     const [endDate, setEndDate] = useState(new Date());
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-
     const [index, setIndex] = useState(0);
-    const [routes] = useState([
+    const [orderData, setOrderData] = useState([]);
+
+    const fetchOrderHistory = useCallback(async () => {
+        try {
+            const response = await GetCollectionOrderHistory();
+            if (response.success) {
+                setOrderData(response.data);
+            }
+        } catch (err) {
+            console.error("Error fetching order history:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchOrderHistory();
+    }, [fetchOrderHistory]);
+
+    const routes = useMemo(() => [
         { key: 'collection', title: 'Collection History' },
         { key: 'order', title: 'Order History' },
-    ]);
+    ], []);
 
-    const renderScene = SceneMap({
+    const renderScene = useMemo(() => SceneMap({
         collection: () => <CollectionHistory startDate={startDate} endDate={endDate} />,
-        order: OrderHistory,
-    });
+        order: () => <OrderHistory orderData={orderData} />,
+    }), [startDate, endDate, orderData]);
 
     return (
         <View style={styles.container}>
@@ -192,7 +233,7 @@ const CollectionHistoryScreen = () => {
                 navigationState={{ index, routes }}
                 renderScene={renderScene}
                 onIndexChange={setIndex}
-                initialLayout={{ width: Dimensions.get('window').width }}
+                initialLayout={{ width }}
                 renderTabBar={(props) => (
                     <TabBar
                         {...props}
@@ -208,103 +249,91 @@ const CollectionHistoryScreen = () => {
     );
 };
 
+// Styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#fff',
     },
     datePickerContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        marginBottom: 12,
+        paddingHorizontal: 5,
+        paddingVertical: 10,
     },
     dateInputContainer: {
         flex: 1,
-        marginHorizontal: 0,
-    },
-    dateInput: {
         borderWidth: 1,
         borderColor: Color.primeBlue,
         borderRadius: 8,
-        padding: 12,
-        textAlign: 'center',
-        backgroundColor: '#fff',
+        alignItems:"center"
+      
+    },
+    dateInput: {
         fontSize: 16,
     },
     dateSeparator: {
+        marginHorizontal: 10,
         fontSize: 16,
-        color: '#757575',
-        marginHorizontal: 8,
     },
     tabContainer: {
         flex: 1,
+        
     },
     card: {
         backgroundColor: '#fff',
         borderRadius: 8,
-        padding: 10,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        margin: 5,
-        paddingVertical: 16,
+        padding: 16,
+        marginVertical: 8,
+        elevation: 2,
+        margin:5,
+
     },
     cardDate: {
-        fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
+        fontSize: 14,
+        color: '#666',
     },
     cardAmount: {
-        fontSize: 14,
-        color: '#555',
+        fontSize: 16,
         fontWeight: 'bold',
-        marginTop: 4,
+        marginTop: 8,
     },
-    cardName: {
-        fontSize: 14,
-        color: '#555',
-        marginTop: 4,
-    },
-    cardBillNo: {
-        fontSize: 14,
-        color: '#555',
-        marginTop: 4,
+    name:{
+      fontSize:16,
+      fontWeight:"700",
+      color:Color.primeBlue
     },
     cardStatus: {
         fontSize: 14,
-        fontWeight: 'bold',
         marginTop: 8,
     },
     emptyText: {
         textAlign: 'center',
-        fontSize: 16,
-        color: '#757575',
         marginTop: 20,
+        fontSize: 16,
+        color: '#666',
     },
     tabBar: {
         backgroundColor: '#fff',
-        elevation: 0,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
     },
     indicator: {
         backgroundColor: '#6200EE',
-        height: 3,
     },
     tabLabel: {
         fontSize: 14,
         fontWeight: 'bold',
+    },
+    loader: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16,
+        color: 'red',
     },
 });
 
