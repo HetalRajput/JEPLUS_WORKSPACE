@@ -7,6 +7,7 @@ import { PostComplain } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 const CollectionHelpAndSupportScreen = () => {
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
+    const [acno, setAcno] = useState(''); // New state for account number
     const [loading, setLoading] = useState(false); // State for loader
     const email = 'support@jeplus.in';
     const mobile = '+91 11 6813 0000';
@@ -17,7 +18,7 @@ const CollectionHelpAndSupportScreen = () => {
     };
 
     const handleSubmit = async () => {
-        if (!subject || !description) {
+        if (!subject || !description || !acno) { // Validate all fields including acno
             Alert.alert('Error', 'Please fill all fields.');
             return;
         }
@@ -28,6 +29,7 @@ const CollectionHelpAndSupportScreen = () => {
             const response = await PostComplain({
                 vno: subject,
                 Desc1: description,
+                acno: acno, // Include acno in the API request
             });
 
             console.log(">>>>>>>>>>>>>>", response.data);
@@ -36,6 +38,7 @@ const CollectionHelpAndSupportScreen = () => {
                 Alert.alert('Success', 'Your query has been submitted. We will contact you shortly.');
                 setSubject('');
                 setDescription('');
+                setAcno(''); // Reset acno field
             } else {
                 Alert.alert('Error', 'Something went wrong. Please try again.');
             }
@@ -63,6 +66,17 @@ const CollectionHelpAndSupportScreen = () => {
                 value={subject}
                 onChangeText={(text) => setSubject(text.replace(/[^0-9]/g, ''))} // Allow only numbers
                 placeholder="Enter Invoice Number"
+                style={styles.input}
+                theme={{ colors: { primary: Color.primeBlue } }}
+                keyboardType="numeric"
+            />
+
+            <TextInput
+                label="Account Number"
+                mode="outlined"
+                value={acno}
+                onChangeText={(text) => setAcno(text.replace(/[^0-9]/g, ''))} // Allow only numbers
+                placeholder="Enter Account Number"
                 style={styles.input}
                 theme={{ colors: { primary: Color.primeBlue } }}
                 keyboardType="numeric"

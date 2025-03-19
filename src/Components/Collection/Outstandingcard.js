@@ -2,42 +2,44 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const ComplainCard = ({ name, description, date, enteredBy, vno, acno }) => {
+const OutstandingCard = ({ name, osamt, vno, routes, date, acno }) => {
     return (
         <View style={styles.card}>
             {/* Header Section */}
             <View style={styles.cardHeader}>
                 <Text style={styles.name}>{name}</Text>
+                <Text style={styles.date}>{date}</Text>
             </View>
 
-            {/* Date */}
-            <Text style={styles.cardDate}>{date}</Text>
-
-            {/* Info Section */}
-            <View style={styles.cardContent}>
-                <View style={styles.infoContainer}>
-                    <Icon name="person" size={20} color="#4CAF50" />
-                    <Text style={styles.cardLabel}>Entered By:</Text>
-                    <Text style={styles.cardValue}>{enteredBy}</Text>
-                </View>
-                
-                <View style={styles.infoContainer}>
-                    <Icon name="receipt" size={20} color="#FF9800" />
-                    <Text style={styles.cardLabel}>V No:</Text>
-                    <Text style={styles.cardValue}>{vno}</Text>
-                </View>
-            </View>
-           
+            {/* Outstanding Info */}
             <View style={styles.cardContent}>
                 <View style={styles.infoContainer}>
                     <Icon name="account-balance" size={20} color="#2196F3" />
                     <Text style={styles.cardLabel}>Account No:</Text>
                     <Text style={styles.cardValue}>{acno}</Text>
                 </View>
+
+                <View style={styles.infoContainer}>
+                    <Icon name="receipt" size={20} color="#FF9800" />
+                    <Text style={styles.cardLabel}>V No:</Text>
+                    <Text style={styles.cardValue}>{vno}</Text>
+                </View>
             </View>
 
-            {/* Description at the End in Italic */}
-            <Text style={styles.description}>{description}</Text>
+            <View style={styles.cardContent}>
+                <View style={styles.infoContainer}>
+                    <Icon name="attach-money" size={20} color="#4CAF50" />
+                    <Text style={styles.cardLabel}>Os Amount:</Text>
+                    <Text style={styles.cardValue}>₹{osamt}</Text>
+                </View>
+
+
+            </View>
+            <View style={styles.infoContainer}>
+                <Icon name="place" size={20} color="#E91E63" />
+                <Text style={styles.cardLabel}>Route:</Text>
+                <Text style={styles.cardValue}>{routes}</Text>
+            </View>
         </View>
     );
 };
@@ -46,8 +48,8 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: '#fff',
         borderRadius: 12,
-        padding: 12,
-        marginVertical: 8,
+        padding: 15,
+        marginVertical: 5,
         marginHorizontal: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -69,15 +71,13 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
-    cardDate: {
-        fontSize: 12,
+    date: {
+        fontSize: 14,
         color: '#666',
-        marginBottom: 8,
     },
     cardContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
         marginVertical: 8,
     },
     infoContainer: {
@@ -95,13 +95,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
     },
-    description: {
-        fontSize: 14,
-        color: '#555',
-        fontStyle: 'italic',    // Italic description
-        marginTop: 12,
-        lineHeight: 20,
-    },
 });
 
-export default ComplainCard;
+export default OutstandingCard;

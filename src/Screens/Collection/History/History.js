@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import {
     View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Dimensions, RefreshControl, ActivityIndicator
 } from 'react-native';
@@ -12,17 +12,35 @@ import CollectionHistoryCard from '../../../Components/Collection/Historycard';
 // Constants
 const { width } = Dimensions.get('window');
 
+// Reducer for state management
+const initialState = {
+    collectionData: [],
+    orderData: [],
+    loading: true,
+    refreshing: false,
+    error: null,
+};
+
+function reducer(state, action) {
+    switch (action.type) {
+        case 'FETCH_START':
+            return { ...state, loading: true, refreshing: true, error: null };
+        case 'FETCH_SUCCESS':
+            return { ...state, loading: false, refreshing: false, [action.payload.key]: action.payload.data };
+        case 'FETCH_ERROR':
+            return { ...state, loading: false, refreshing: false, error: action.payload };
+        default:
+            return state;
+    }
+}
+
 // Collection History Component
 const CollectionHistory = ({ startDate, endDate }) => {
-    const [collectionData, setCollectionData] = useState([]);
-    const [refreshing, setRefreshing] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [state, dispatch] = useReducer(reducer, initialState);
 
     const fetchCollection = useCallback(async () => {
+        dispatch({ type: 'FETCH_START' });
         try {
-            setRefreshing(true);
-            setLoading(true);
             const formattedStartDate = moment(startDate).format('YYYY-MM-DD');
             const formattedEndDate = moment(endDate).format('YYYY-MM-DD');
 
@@ -38,16 +56,13 @@ const CollectionHistory = ({ startDate, endDate }) => {
                     invoiceNo: item.VNo,
                     CollectedAmount: item.CollectedAmount
                 }));
-                setCollectionData(formattedData);
+                dispatch({ type: 'FETCH_SUCCESS', payload: { key: 'collectionData', data: formattedData } });
             } else {
-                setError('Failed to fetch collection history.');
+                dispatch({ type: 'FETCH_ERROR', payload: 'Failed to fetch collection history.' });
             }
         } catch (err) {
-            setError('An error occurred while fetching data.');
+            dispatch({ type: 'FETCH_ERROR', payload: 'An error occurred while fetching data.' });
             console.error("Error fetching collection history:", err);
-        } finally {
-            setRefreshing(false);
-            setLoading(false);
         }
     }, [startDate, endDate]);
 
@@ -63,25 +78,25 @@ const CollectionHistory = ({ startDate, endDate }) => {
         <CollectionHistoryCard item={item} />
     );
 
-    if (loading) {
+    if (state.loading) {
         return <ActivityIndicator size="large" color={Color.primeBlue} style={styles.loader} />;
     }
 
-    if (error) {
-        return <Text style={styles.errorText}>{error}</Text>;
+    if (state.error) {
+        return <Text style={styles.errorText}>{state.error}</Text>;
     }
 
     return (
         <View style={styles.tabContainer}>
             <FlatList
-                data={collectionData}
+                data={state.collectionData}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id}
                 ListEmptyComponent={<Text style={styles.emptyText}>No Collection History</Text>}
                 contentContainerStyle={{ paddingBottom: 20 }}
                 refreshControl={
                     <RefreshControl
-                        refreshing={refreshing}
+                        refreshing={state.refreshing}
                         onRefresh={onRefresh}
                         colors={[Color.primeBlue]}
                     />
@@ -92,9 +107,7 @@ const CollectionHistory = ({ startDate, endDate }) => {
 };
 
 // Order History Component
-const OrderHistory = ({ orderData }) => {
-    console.log(orderData);
-
+const OrderHistory = ({ orderData, fetchOrderHistory }) => {
     const [refreshing, setRefreshing] = useState(false);
 
     const formattedOrderData = useMemo(() => {
@@ -108,10 +121,10 @@ const OrderHistory = ({ orderData }) => {
         }));
     }, [orderData]);
 
-    const onRefresh = () => {
+    const onRefresh = async () => {
         setRefreshing(true);
-
-        setTimeout(() => setRefreshing(false), 1000); // Simulate refresh
+        await fetchOrderHistory(); // Fetch new data
+        setRefreshing(false);
     };
 
     const renderItem = ({ item }) => (
@@ -120,13 +133,11 @@ const OrderHistory = ({ orderData }) => {
                 <Text style={styles.name}># {item.name}</Text>
                 <Text style={styles.cardDate}>📅 {item.date}</Text>
             </View>
-
             <View style={styles.cardContent}>
                 <View style={styles.infoContainer}>
                     <Text style={styles.cardLabel}>📦 Items:</Text>
                     <Text style={styles.cardValue}>{item.items}</Text>
                 </View>
-
                 <View style={styles.infoContainer}>
                     <Text style={styles.cardLabel}>💰 Amount:</Text>
                     <Text style={styles.cardValue}>₹{item.amount}</Text>
@@ -134,7 +145,6 @@ const OrderHistory = ({ orderData }) => {
             </View>
         </View>
     );
-
 
     return (
         <View style={styles.tabContainer}>
@@ -166,15 +176,17 @@ const CollectionHistoryScreen = () => {
     const [orderData, setOrderData] = useState([]);
 
     const fetchOrderHistory = useCallback(async () => {
+        const formattedStartDate = moment(startDate).format('YYYY-MM-DD');
+        const formattedEndDate = moment(endDate).format('YYYY-MM-DD');
         try {
-            const response = await GetCollectionOrderHistory();
+            const response = await GetCollectionOrderHistory(formattedStartDate, formattedEndDate);
             if (response.success) {
                 setOrderData(response.data);
             }
         } catch (err) {
             console.error("Error fetching order history:", err);
         }
-    }, []);
+    }, [startDate, endDate]);
 
     useEffect(() => {
         fetchOrderHistory();
@@ -187,8 +199,8 @@ const CollectionHistoryScreen = () => {
 
     const renderScene = useMemo(() => SceneMap({
         collection: () => <CollectionHistory startDate={startDate} endDate={endDate} />,
-        order: () => <OrderHistory orderData={orderData} />,
-    }), [startDate, endDate, orderData]);
+        order: () => <OrderHistory orderData={orderData} fetchOrderHistory={fetchOrderHistory} />,
+    }), [startDate, endDate, orderData, fetchOrderHistory]);
 
     return (
         <View style={styles.container}>
@@ -277,7 +289,6 @@ const styles = StyleSheet.create({
         borderColor: Color.primeBlue,
         borderRadius: 8,
         alignItems: "center"
-
     },
     dateInput: {
         fontSize: 16,
@@ -288,7 +299,6 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flex: 1,
-
     },
     card: {
         backgroundColor: '#fff',
@@ -354,8 +364,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    emptyText:{
-     textAlign:"center"
+    emptyText: {
+        textAlign: "center"
     },
     errorText: {
         textAlign: 'center',

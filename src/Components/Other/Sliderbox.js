@@ -58,9 +58,9 @@ const SliderBox = () => {
         scrollEventThrottle={16}
       >
         {banners.map((banner, index) => (
-          <TouchableOpacity key={index} style={styles.imageContainer}>
+          <View key={index} style={styles.imageContainer}>
             <Image source={{ uri: banner.url }} style={styles.bannerImage} />
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
       {/* Dots container hidden */}

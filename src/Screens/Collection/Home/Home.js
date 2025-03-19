@@ -22,6 +22,9 @@ import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import LinearGradient from 'react-native-linear-gradient';
 import { CollectionSummery, Getuser } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import ComplainTab from '../../../Components/Collection/CompainTab';
+import OutstandingTab from '../../../Components/Collection/Outstandingtab';
+import { getCurrentLocation, getDistanceManual } from '../../../Components/Collection/GetCurrentlocarion';
+import { PunchInOut } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 
 const { width, height } = Dimensions.get('window');
 // Office Location
@@ -41,8 +44,7 @@ const DashboardScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  //collection summery
-
+  // Fetch summary data
   const fetchSummery = async () => {
     try {
       const response = await CollectionSummery();
@@ -52,17 +54,17 @@ const DashboardScreen = ({ navigation }) => {
           today: {
             collected: data[0].Collected,
             totalAmt: data[0].totalAmount,
-            totalCollection: data[0].totalCollected, // ✅ This is correct
+            totalCollection: data[0].totalCollected,
           },
           yesterday: {
             collected: data[1].Collected,
             totalAmt: data[1].totalAmount,
-            totalCollection: data[1].totalCollected, // ✅ Add this line
+            totalCollection: data[1].totalCollected,
           },
           monthly: {
             collected: data[2].Collected,
             totalAmt: data[2].totalAmount,
-            totalCollection: data[2].totalCollected, // ✅ Add this line
+            totalCollection: data[2].totalCollected,
           },
         };
         setSummaryData(updatedSummaryData);
@@ -75,19 +77,13 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
-
-  //fetch user data 
+  // Fetch user data
   const fetchuser = async () => {
-
     const response = await Getuser();
     if (response.data) {
-      setUserName(response.data.Name)
+      setUserName(response.data.Name);
     }
   };
-
-
-
-
 
   // Load isOnline state from AsyncStorage
   useEffect(() => {
@@ -104,12 +100,29 @@ const DashboardScreen = ({ navigation }) => {
     fetchuser();
     fetchSummery();
     loadState();
+
+    // Fetch user's current location and calculate distance
+    const fetchLocation = async () => {
+      try {
+        const location = await getCurrentLocation();
+        const calculatedDistance = getDistanceManual(
+          Office_Lat,
+          Office_Long,
+          location.latitude,
+          location.longitude
+        );
+        setDistance(calculatedDistance);
+      } catch (err) {
+        console.warn('Error fetching location:', err);
+        setDistance('Location access denied');
+      }
+    };
+    fetchLocation();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     fetchSummery();
-    // Simulate data refresh
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
@@ -144,7 +157,6 @@ const DashboardScreen = ({ navigation }) => {
     }
   };
 
-  // Handle Punch In/Out
   const handlePunchInOut = async () => {
     // Check distance only for Punch In (going online)
     if (!isOnline && distance > 1.5) {
@@ -167,10 +179,23 @@ const DashboardScreen = ({ navigation }) => {
       setLoading(true);
 
       try {
-        const newStatus = !isOnline;
-        setIsOnline(newStatus);
-        await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
-        Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
+        const formData = new FormData();
+        formData.append('status', isOnline ? 'out' : 'in');
+        formData.append('image', {
+          uri: photo,
+          type: 'image/jpeg',
+          name: 'punch.jpg',
+        });
+
+        const punchResponse = await PunchInOut(formData);
+        if (punchResponse.success) {
+          const newStatus = !isOnline;
+          setIsOnline(newStatus);
+          await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
+          Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
+        } else {
+          Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
+        }
       } catch (err) {
         console.error('Error:', err);
         Alert.alert('Error', 'An error occurred while processing your request.');
@@ -188,13 +213,9 @@ const DashboardScreen = ({ navigation }) => {
             <Icon name={icon} size={32} color={Color.primeBlue} />
           </View>
           <Text style={styles.statLabel}>{label}</Text>
-
-          {/* Value and Total Display */}
           <Text style={styles.statValue}>
             {value} {total !== null && <Text style={styles.totalText}>/ {total}</Text>}
           </Text>
-
-          {/* Amount Display */}
           <Text style={styles.statAmount}>₹ {amount}</Text>
         </LinearGradient>
       </TouchableOpacity>
@@ -279,47 +300,43 @@ const DashboardScreen = ({ navigation }) => {
 
       {/* Statistics Section */}
       <View style={styles.statsWrapper}>
-        <View style={styles.statsWrapper}>
-          <View style={styles.statsContainer}>
-            {/* Today Collection Card */}
-            {renderStatCard(
-              'cash-outline',
-              summaryData.today.collected,
-              'Today Collection',
-              summaryData.today.totalAmt,
-              summaryData.today.totalCollection,
-              () => navigation.navigate("Summary", { range: "today" })
+        <View style={styles.statsContainer}>
+          {/* Today Collection Card */}
+          {renderStatCard(
+            'cash-outline',
+            summaryData.today.collected,
+            'Today Collection',
+            summaryData.today.totalAmt,
+            summaryData.today.totalCollection,
+            () => navigation.navigate("Summary", { range: "today" })
+          )}
 
-            )}
+          {/* Yesterday Collection Card */}
+          {renderStatCard(
+            'cash-outline',
+            summaryData.yesterday.collected,
+            'Yesterday Collection',
+            summaryData.yesterday.totalAmt,
+            summaryData.yesterday.totalCollection || 0,
+            () => navigation.navigate("Summary", { range: "yesterday" })
+          )}
 
-            {/* Yesterday Collection Card */}
-            {renderStatCard(
-              'cash-outline',
-              summaryData.yesterday.collected,
-              'Yesterday Collection',
-              summaryData.yesterday.totalAmt,
-              summaryData.yesterday.totalCollection || 0,
-              () =>navigation.navigate("Summary",{range:"yesterday"}) 
-               )}
+          {/* Monthly Collection Card */}
+          {renderStatCard(
+            'cash-outline',
+            summaryData.monthly.collected,
+            'Monthly Collection',
+            summaryData.monthly.totalAmt,
+            summaryData.monthly.totalCollection || 0,
+            () => navigation.navigate("Summary", { range: "thismonth" })
+          )}
+        </View>
 
-            {/* Monthly Collection Card */}
-            {renderStatCard(
-              'cash-outline',
-              summaryData.monthly.collected,
-              'Monthly Collection',
-              summaryData.monthly.totalAmt,
-              summaryData.monthly.totalCollection || 0,
-              () =>navigation.navigate("Summary",{range:"thismonth"})            )}
-          </View>
+        <SliderBox />
 
-          <View style={{ marginTop: 20 }}>
-            <SliderBox />
-          </View>
-
-          <ComplainTab navigation={navigation}/>
- 
-
-
+        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 5, marginBottom: 10 }}>
+          <ComplainTab navigation={navigation} />
+          <OutstandingTab navigation={navigation} />
         </View>
       </View>
     </ScrollView>
@@ -388,7 +405,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.02,
     paddingVertical: height * 0.01,
   },
-
   statCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -424,7 +440,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     backgroundColor: Color.lightOrange,
     padding: 5,
-    borderRadius: 20
+    borderRadius: 20,
   },
   errorText: {
     fontSize: width * 0.04,

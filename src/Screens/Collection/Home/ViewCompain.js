@@ -18,7 +18,7 @@ const ComplainScreen = () => {
         // Map the API response to match the expected structure
         const formattedComplaints = response.data.map(complaint => ({
           id: complaint.ComplaintID,
-          name: `Party: ${complaint.Name}`,
+          name: `${complaint.Name}`,
           description: complaint.Desc1,
           date: new Date(complaint.vdt).toLocaleDateString(), // Format date
           status: 'Pending', // Default status, as it's not provided in the data

@@ -42,7 +42,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       });
       // Handle the response data
      
-      console.log(response.data);
+     
       
       if (response.data) {
         
@@ -53,9 +53,38 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       throw error;
     }
   };
+  export const PunchInOut = async (formData) => {
+    try {
+      const token = await getToken(); // Get token from AsyncStorage
+  
+      // Create FormData
+  
+    
+     
+      
+      const response = await axios.post("http://jemapps.in/api/collection/collboy-in-out", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data", // Required for FormData
+        },
+      });
+  
+      return {
+        success: true,
+        data: response.data,
+        message: "Data uploaded successfully",
+      };
+    } catch (error) {
+      console.error("Error uploading data:", error);
+      return {
+        success: false,
+        message: error.message || "Failed to upload data",
+      };
+    }
+  };
   export const getCustomerInvoice = async (TagNo , acno) => {
 
-    console.log(TagNo,acno);
+ 
     
     try {
     
@@ -84,10 +113,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   };
 
   export const CollectionPay = async (formData) => {
-    const token = await getToken(); // Get token from AsyncStorage
-  
-   console.log("this is form data",formData);
-   
+    const token = await getToken(); // Get token from AsyncStorage 
   
     try {
       const response = await axios.postForm(`http://jemapps.in/api/collection/update-invoice`, formData, {
@@ -97,7 +123,6 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
         }
       });
   
-      console.log("this is the reponse data",response.data);
   
       return {
         success: true,
@@ -114,8 +139,8 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     }
   };
 
-  export const CollectionSummery = async (sdate,edate) => {
-    console.log(sdate,edate);
+  export const CollectionSummery = async () => {
+ 
     
     const token = await getToken(); // Get token from AsyncStorage
   
@@ -127,7 +152,6 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
         }
       });
   
-      console.log("this is sumary data",response.data);
       
       return {
         success: true,
@@ -175,7 +199,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
 
 
   export const CustomerSearch = async (query) => { // Accept query as a string, not an object
-    console.log(query);
+
     
     try {
       const response = await axios.get(`http://jemapps.in/api/collection/search-customer/${query}`);
@@ -308,6 +332,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
         }
       });
   
+  console.log("tis is summery response data >>>>>",response.data);
   
       return {
         success: true,
@@ -351,12 +376,14 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
     }
   };
 
-  export const GetCollectionOrderHistory = async (query) => {
+  export const GetCollectionOrderHistory = async (startDate , endDate) => {
+    console.log(startDate,endDate);
+    
     const token = await getToken(); // Get token from AsyncStorage
   
   
     try {
-      const response = await axios.get(`http://jemapps.in/api/collection/get-order-history-by-sman/2025-03-01/2025-03-30`,{
+      const response = await axios.get(`http://jemapps.in/api/collection/get-order-history-by-sman/${startDate}/${endDate}`,{
         headers: {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
@@ -406,15 +433,11 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
-  export const PostComplain = async (body) => {
-   
-    
+
+  export const PostComplain = async (body) => {  
     try {
       // Get token from AsyncStorage
       const token = await getToken();
-     
-      
-  
       // API endpoint
       const url = 'http://jemapps.in/api/collection/add-staff-complaint';
   
@@ -431,5 +454,32 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       // Log and rethrow error
       console.error('Error placing order:', error.response?.data || error.message);
       throw error;
+    }
+  };
+  export const Getcustomeroutstanding = async (startDate,endDate) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/get-ost/${startDate}/${endDate}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log(response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get customer outstanding successfully'
+      };
+    } catch (error) {
+      console.error('Error get outstanding:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
     }
   };
