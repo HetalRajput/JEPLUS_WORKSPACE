@@ -94,7 +94,7 @@ const CollectionHistory = ({ startDate, endDate }) => {
 // Order History Component
 const OrderHistory = ({ orderData }) => {
     console.log(orderData);
-    
+
     const [refreshing, setRefreshing] = useState(false);
 
     const formattedOrderData = useMemo(() => {
@@ -104,7 +104,7 @@ const OrderHistory = ({ orderData }) => {
             items: item.order_count,
             amount: item.amt,
             status: item.order_status,
-            name:item.name
+            name: item.name
         }));
     }, [orderData]);
 
@@ -115,17 +115,26 @@ const OrderHistory = ({ orderData }) => {
     };
 
     const renderItem = ({ item }) => (
-    
         <View style={styles.card}>
-            <Text style={styles.name}># {item.name}</Text>
-            <Text style={styles.cardDate}>📅 {item.date}</Text>
-            <Text style={styles.cardAmount}>📦 {item.items} Items</Text>
-            <Text style={styles.cardAmount}>💰 ₹{item.amount}</Text>
-            <Text style={[styles.cardStatus, { color: item.status === 'COMPLETED' ? '#4CAF50' : '#FFA000' }]}>
-                {item.status}
-            </Text>
+            <View style={styles.cardHeader}>
+                <Text style={styles.name}># {item.name}</Text>
+                <Text style={styles.cardDate}>📅 {item.date}</Text>
+            </View>
+
+            <View style={styles.cardContent}>
+                <View style={styles.infoContainer}>
+                    <Text style={styles.cardLabel}>📦 Items:</Text>
+                    <Text style={styles.cardValue}>{item.items}</Text>
+                </View>
+
+                <View style={styles.infoContainer}>
+                    <Text style={styles.cardLabel}>💰 Amount:</Text>
+                    <Text style={styles.cardValue}>₹{item.amount}</Text>
+                </View>
+            </View>
         </View>
     );
+
 
     return (
         <View style={styles.tabContainer}>
@@ -267,8 +276,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: Color.primeBlue,
         borderRadius: 8,
-        alignItems:"center"
-      
+        alignItems: "center"
+
     },
     dateInput: {
         fontSize: 16,
@@ -279,40 +288,56 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flex: 1,
-        
+
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 16,
+        borderRadius: 12,
+        padding: 10,
         marginVertical: 8,
-        elevation: 2,
-        margin:5,
-
+        marginHorizontal: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 4,
     },
-    cardDate: {
-        fontSize: 14,
-        color: '#666',
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 8,
+        marginBottom: 12,
     },
-    cardAmount: {
+    name: {
         fontSize: 16,
         fontWeight: 'bold',
-        marginTop: 8,
+        color: '#333',
     },
-    name:{
-      fontSize:16,
-      fontWeight:"700",
-      color:Color.primeBlue
-    },
-    cardStatus: {
-        fontSize: 14,
-        marginTop: 8,
-    },
-    emptyText: {
-        textAlign: 'center',
-        marginTop: 20,
-        fontSize: 16,
+    cardDate: {
+        fontSize: 12,
         color: '#666',
+    },
+    cardContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    infoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    cardLabel: {
+        fontSize: 14,
+        color: '#555',
+        fontWeight: '500',
+        marginRight: 6,
+    },
+    cardValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#000',
     },
     tabBar: {
         backgroundColor: '#fff',
@@ -328,6 +353,9 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    emptyText:{
+     textAlign:"center"
     },
     errorText: {
         textAlign: 'center',

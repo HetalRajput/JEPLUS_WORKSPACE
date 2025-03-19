@@ -378,3 +378,58 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
+
+  export const GetcollectionComplain = async (query) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/get-complaints`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log(response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get collection complain successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+  export const PostComplain = async (body) => {
+   
+    
+    try {
+      // Get token from AsyncStorage
+      const token = await getToken();
+     
+      
+  
+      // API endpoint
+      const url = 'http://jemapps.in/api/collection/add-staff-complaint';
+  
+      // Make POST request with the provided payload
+      const response = await axios.post(url, body, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          'Content-Type': 'application/json', // Ensure content type is set correctly
+        },
+      });
+     
+       return response;
+    } catch (error) {
+      // Log and rethrow error
+      console.error('Error placing order:', error.response?.data || error.message);
+      throw error;
+    }
+  };

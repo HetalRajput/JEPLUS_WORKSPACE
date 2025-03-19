@@ -21,6 +21,7 @@ import { useRecoilValue } from 'recoil';
 import SearchScreen from '../../Screens/Collection/Order/SearchItem';
 import SearchCustomer from '../../Screens/Collection/Order/SearchCustomer';
 import SummaryScreen from '../../Screens/Collection/Home/ShowSummery';
+import ComplainScreen from '../../Screens/Collection/Home/ViewCompain';
 
 
 const Tab = createBottomTabNavigator();
@@ -31,6 +32,9 @@ const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="HomeMain" component={HomeScreen} />
     <Stack.Screen name="Summary" component={SummaryScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Complains" component={ComplainScreen} options={{ headerShown: true }} />
+
+    
   </Stack.Navigator>
 );
 

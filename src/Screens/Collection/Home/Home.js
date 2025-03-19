@@ -21,6 +21,7 @@ import SliderBox from '../../../Components/Other/Sliderbox';
 import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import LinearGradient from 'react-native-linear-gradient';
 import { CollectionSummery, Getuser } from '../../../Constant/Api/Collectionapi/Apiendpoint';
+import ComplainTab from '../../../Components/Collection/CompainTab';
 
 const { width, height } = Dimensions.get('window');
 // Office Location
@@ -314,6 +315,11 @@ const DashboardScreen = ({ navigation }) => {
           <View style={{ marginTop: 20 }}>
             <SliderBox />
           </View>
+
+          <ComplainTab navigation={navigation}/>
+ 
+
+
         </View>
       </View>
     </ScrollView>

@@ -1,90 +1,96 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Icon from "react-native-vector-icons/Ionicons";
-import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
-import { Color } from '../../Constant/Constants';
 
 const CollectionHistoryCard = ({ item }) => {
-
-    
     return (
-        <LinearGradient
-            colors={['#ffffff', '#f2f8ff']} // Light gradient
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}
-        >
+        <View style={styles.card}>
 
-            {/* Card Header */}
+            {/* Header Section */}
             <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Invoice #{item.invoiceNo}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: item.status === 'COLLECTED' ? '#2E7D32' : '#FF8F00' }]}>
-                    <Icon 
-                        name={item.status === 'COLLECTED' ? 'checkmark-circle' : 'hourglass-outline'} 
-                        size={16} 
-                        color="#fff" 
+                <View>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <Text style={styles.cardDate}>Date: {moment(item.date).format('DD MMM YYYY')}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: item.status === 'COLLECTED' ? '#4CAF50' : '#FFC107' }]}>
+                    <Icon
+                        name={item.status === 'COLLECTED' ? 'checkmark-circle' : 'time-outline'}
+                        size={16}
+                        color="#fff"
                     />
                     <Text style={styles.statusText}>{item.status}</Text>
                 </View>
             </View>
 
-            {/* Card Body */}
-            <View style={styles.cardBody}>
-                <View style={styles.cardRow}>
-                    <Icon name="calendar-outline" size={18} color="#1976D2" />
-                    <Text style={styles.cardText}>Date: {moment(item.date).format('DD MMM YYYY')}</Text>
+            {/* Content Section */}
+            <View style={styles.cardContent}>
+                <View style={styles.infoContainer}>
+                    <Icon name="receipt-outline" size={18} color="#1976D2" />
+                    <Text style={styles.cardLabel}>Invoice:</Text>
+                    <Text style={styles.cardValue}>#{item.invoiceNo}</Text>
                 </View>
-                <View style={styles.cardRow}>
-                    <Icon name="cash-outline" size={18} color="#2E7D32" />
-                    <Text style={styles.cardText}>Amount: ₹{item.amount}</Text>
-                </View>
-                <View style={styles.cardRow}>
-                    <Icon name="cash-outline" size={18} color="#2E7D32" />
-                    <Text style={styles.cardText}>Collectd Amt: ₹{item.CollectedAmount}</Text>
-                </View>
-                <View style={styles.cardRow}>
-                    <Icon name="person-circle-outline" size={18} color="#00796B" />
-                    <Text style={styles.cardText}>Customer: {item.name}</Text>
-                </View>
-                <View style={styles.cardRow}>
-                    <Icon name="receipt-outline" size={18} color="#616161" />
-                    <Text style={styles.cardText}>Bill No: {item.billNo}</Text>
+
+                <View style={styles.infoContainer}>
+                    <Icon name="pricetag-outline" size={18} color="#4CAF50" />
+                    <Text style={styles.cardLabel}>Amount:</Text>
+                    <Text style={styles.cardValue}>₹{item.amount}</Text>
                 </View>
             </View>
-        </LinearGradient>
+
+            <View style={styles.cardContent}>
+                <View style={styles.infoContainer}>
+                    <Icon name="cash-outline" size={18} color="#FF9800" />
+                    <Text style={styles.cardLabel}>Collected:</Text>
+                    <Text style={styles.cardValue}>₹{item.CollectedAmount}</Text>
+                </View>
+
+                <View style={styles.infoContainer}>
+                    <Icon name="barcode-outline" size={18} color="#9C27B0" />
+                    <Text style={styles.cardLabel}>Bill No:</Text>
+                    <Text style={styles.cardValue}>{item.billNo}</Text>
+                </View>
+            </View>
+        </View>
     );
 };
 
+
+
 const styles = StyleSheet.create({
     card: {
+        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
-        marginBottom: 12,
-        marginHorizontal: 8,
-        borderWidth: 1,
-        borderColor: '#90CAF9',
+        marginVertical: 8,
+        marginHorizontal: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
         elevation: 4,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 8,
         marginBottom: 12,
     },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#0D47A1',
+    name: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    cardDate: {
+        fontSize: 12,
+        color: '#666',
     },
     statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -93,20 +99,27 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: '#fff',
+        marginLeft: 6,
     },
-    cardBody: {
-        marginTop: 8,
+    cardContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 8,
     },
-    cardRow: {
+    infoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
     },
-    cardText: {
+    cardLabel: {
         fontSize: 14,
-        color: '#424242',
-        marginLeft: 10,
+        color: '#555',
         fontWeight: '500',
+        marginHorizontal: 6,
+    },
+    cardValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#000',
     },
 });
 
