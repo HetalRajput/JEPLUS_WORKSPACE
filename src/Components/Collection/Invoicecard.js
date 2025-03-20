@@ -1,49 +1,59 @@
+
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { Checkbox } from 'react-native-paper'; // Import Checkbox
 
-const InvoiceCard = ({ invoiceNo, date, dueDate, amount, days }) => {
+const InvoiceCard = ({ invoiceNo, date, dueDate, amount, days, isSelected, onSelect }) => {
   return (
     <View style={styles.card}>
       {/* Header Section */}
       <View style={styles.cardHeader}>
-        <View style={{flexDirection:"row"}}>
-        <Icon name="receipt-outline" size={20} color="#4CAF50" />
-        <Text style={styles.invoiceNo}> {invoiceNo}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Checkbox
+            status={isSelected ? 'checked' : 'unchecked'}
+            onPress={onSelect}
+            color="#4CAF50"
+          />
+          <Icon name="receipt-outline" size={20} color="#4CAF50" />
+          <Text style={styles.invoiceNo}> {invoiceNo}</Text>
         </View>
 
         <Text style={styles.cardDate}>📅 {date}</Text>
       </View>
 
-      {/* Divider */}
       <View style={styles.divider} />
 
-      {/* Content Section */}
-      <View style={styles.cardContent}>
-        <View style={styles.infoContainer}>
-          <Icon name="calendar-outline" size={18} color="#1976D2" />
-          <Text style={styles.cardLabel}>Due Date:</Text>
-          <Text style={styles.cardValue}>{dueDate || 'N/A'}</Text>
-        </View>
+{/* Content Section */}
+<View style={styles.cardContent}>
+  <View style={styles.infoContainer}>
+    <Icon name="calendar-outline" size={18} color="#1976D2" />
+    <Text style={styles.cardLabel}>Due Date:</Text>
+    <Text style={styles.cardValue}>{dueDate || 'N/A'}</Text>
+  </View>
 
-        <View style={styles.dividerVertical} />
+  <View style={styles.dividerVertical} />
 
-        <View style={styles.infoContainer}>
-          <Icon name="cash-outline" size={18} color="#4CAF50" />
-          <Text style={styles.cardLabel}>Amount:</Text>
-          <Text style={[styles.cardValue, styles.amount]}>₹{amount.toFixed(2)}</Text>
-        </View>
+  <View style={styles.infoContainer}>
+    <Icon name="cash-outline" size={18} color="#4CAF50" />
+    <Text style={styles.cardLabel}>Amount:</Text>
+    <Text style={[styles.cardValue, styles.amount]}>₹{amount.toFixed(2)}</Text>
+  </View>
 
-        <View style={styles.dividerVertical} />
+  <View style={styles.dividerVertical} />
 
-        <View style={styles.infoContainer}>
-          <Icon name="time-outline" size={18} color={days ? '#F44336' : '#9E9E9E'} />
-          <Text style={styles.cardLabel}>Days Due:</Text>
-          <Text style={[styles.cardValue, days ? styles.due : styles.noDue]}>
-            {days ?? 'N/A'}
-          </Text>
-        </View>
-      </View>
+  <View style={styles.infoContainer}>
+    <Icon name="time-outline" size={18} color={days ? '#F44336' : '#9E9E9E'} />
+    <Text style={styles.cardLabel}>Days Due:</Text>
+    <Text style={[styles.cardValue, days ? styles.due : styles.noDue]}>
+      {days ?? 'N/A'}
+    </Text>
+  </View>
+</View>
+
+      {/* Rest of the InvoiceCard code remains the same */}
+      {/* ... */}
     </View>
   );
 };
@@ -56,7 +66,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginVertical: 5,
-    marginHorizontal:5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
