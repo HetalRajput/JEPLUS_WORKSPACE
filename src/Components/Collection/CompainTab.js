@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     borderColor:Color.primeBlue
   },
   title: {
-    fontSize: 17,
+    fontSize: 14,
     fontFamily: 'Poppins-SemiBold',
     color: '#000',  // Text color changed to black for better visibility
     marginTop: 8,

@@ -230,13 +230,15 @@ const CollectionScreen = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
-          data={search ? filteredInvoices : collectionInvoice} // Use search results if search query exists
-          keyExtractor={(item) => Math.random().toString(36).substring(7)}
+          data={search ? filteredInvoices : collectionInvoice}
+          keyExtractor={(item) => item.acno}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
+          initialNumToRender={10}
+          windowSize={21}
         />
       )}
       {isPopupVisible && (

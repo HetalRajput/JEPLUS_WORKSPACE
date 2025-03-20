@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     borderColor:Color.primeBlue
   },
   title: {
-    fontSize: 17,
+    fontSize: 14,
     fontFamily: 'Poppins-SemiBold',
     color: Color.black,     // Use your constant color
     marginTop: 8,

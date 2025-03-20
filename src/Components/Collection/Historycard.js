@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import moment from 'moment';
+
+const { width } = Dimensions.get('window');
 
 const CollectionHistoryCard = ({ item }) => {
     return (
@@ -9,7 +11,7 @@ const CollectionHistoryCard = ({ item }) => {
 
             {/* Header Section */}
             <View style={styles.cardHeader}>
-                <View>
+                <View style={styles.nameContainer}>
                     <Text style={styles.name}>{item.name}</Text>
                     <Text style={styles.cardDate}>Date: {moment(item.date).format('DD MMM YYYY')}</Text>
                 </View>
@@ -55,8 +57,6 @@ const CollectionHistoryCard = ({ item }) => {
     );
 };
 
-
-
 const styles = StyleSheet.create({
     card: {
         backgroundColor: '#fff',
@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 4,
+        
     },
     cardHeader: {
         flexDirection: 'row',
@@ -79,10 +80,15 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
         marginBottom: 12,
     },
+    nameContainer: {
+        maxWidth: width * 0.6,   // Ensure the name takes up a responsive width
+    },
     name: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
+        flexWrap: 'wrap',        // Allow text to wrap
+        
     },
     cardDate: {
         fontSize: 12,
