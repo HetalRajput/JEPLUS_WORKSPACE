@@ -322,6 +322,8 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
 
 
   export const SummeryDetail = async (sdate,edate) => {
+
+    
     const token = await getToken(); // Get token from AsyncStorage
   
   

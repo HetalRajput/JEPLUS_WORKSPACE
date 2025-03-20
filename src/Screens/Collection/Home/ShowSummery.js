@@ -19,6 +19,7 @@ const SummaryScreen = ({ route }) => {
   const [eDate, setEDate] = useState(null);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreData, setHasMoreData] = useState(true); // Track if more data is available
 
   useEffect(() => {
     setDateRange();
@@ -64,13 +65,16 @@ const SummaryScreen = ({ route }) => {
       const response = await SummeryDetail(formattedStartDate, formattedEndDate, nextPage);
       console.log("Response Data:", response.data);
 
-      if (nextPage === 1) {
-        setSummaryData(response.data);
+      if (response.data.length === 0) {
+        setHasMoreData(false); // No more data available
       } else {
-        setSummaryData((prevData) => [...prevData, ...response.data]);
+        if (nextPage === 1) {
+          setSummaryData(response.data);
+        } else {
+          setSummaryData((prevData) => [...prevData, ...response.data]);
+        }
+        setPage(nextPage);
       }
-      
-      setPage(nextPage);
     } catch (error) {
       console.error("Error fetching summary data:", error);
     } finally {
@@ -80,7 +84,7 @@ const SummaryScreen = ({ route }) => {
   };
 
   const loadMoreData = () => {
-    if (!loadingMore) {
+    if (!loadingMore && hasMoreData) { // Only load more data if there is more data available
       fetchSummaryData(page + 1);
     }
   };
@@ -132,14 +136,9 @@ const SummaryScreen = ({ route }) => {
           data={summaryData}
           keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
           renderItem={renderItem}
-          initialNumToRender={10} 
-          windowSize={5} 
-          maxToRenderPerBatch={10} 
-          onEndReached={loadMoreData}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loadingMore ? <ActivityIndicator size="small" color="#1568ab" style={{ marginVertical: 10 }} /> : null
-          }
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
         />
       )}
     </View>

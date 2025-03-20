@@ -230,13 +230,7 @@ const DashboardScreen = ({ navigation }) => {
     );
   }
 
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
+
 
   return (
     <ScrollView
