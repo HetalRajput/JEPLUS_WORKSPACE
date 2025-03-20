@@ -45,6 +45,8 @@ const CollectionHistory = ({ startDate, endDate }) => {
             const formattedEndDate = moment(endDate).format('YYYY-MM-DD');
 
             const response = await GetCollectionhistory(formattedStartDate, formattedEndDate);
+            console.log(response);
+            
             if (response.success) {
                 const formattedData = response.data.map(item => ({
                     id: item.VNo.toString(),

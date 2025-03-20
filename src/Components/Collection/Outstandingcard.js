@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const OutstandingCard = ({ name, osamt, vno, routes, date, acno }) => {
+const OutstandingCard = ({ name, osamt, routes, date, acno, navigation }) => {
+ 
+    
     return (
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card}   onPress={() => navigation.navigate('Invoice', { acno, routes })}>
             {/* Header Section */}
             <View style={styles.cardHeader}>
                 <Text style={styles.name}>{name}</Text>
-                <Text style={styles.date}>{date}</Text>
             </View>
 
             {/* Outstanding Info */}
@@ -17,12 +19,6 @@ const OutstandingCard = ({ name, osamt, vno, routes, date, acno }) => {
                     <Icon name="account-balance" size={20} color="#2196F3" />
                     <Text style={styles.cardLabel}>Account No:</Text>
                     <Text style={styles.cardValue}>{acno}</Text>
-                </View>
-
-                <View style={styles.infoContainer}>
-                    <Icon name="receipt" size={20} color="#FF9800" />
-                    <Text style={styles.cardLabel}>V No:</Text>
-                    <Text style={styles.cardValue}>{vno}</Text>
                 </View>
             </View>
 
@@ -40,7 +36,7 @@ const OutstandingCard = ({ name, osamt, vno, routes, date, acno }) => {
                 <Text style={styles.cardLabel}>Route:</Text>
                 <Text style={styles.cardValue}>{routes}</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 

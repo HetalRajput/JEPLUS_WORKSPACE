@@ -433,6 +433,33 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
+  export const SearchComplaints = async (query) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/search-complant/${query}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log("search data>>>>>>>>>>>>",response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get collection complain successfully'
+      };
+    } catch (error) {
+      console.error('Error posting invoice:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
 
   export const PostComplain = async (body) => {  
     try {
@@ -456,12 +483,39 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       throw error;
     }
   };
-  export const Getcustomeroutstanding = async (startDate,endDate) => {
+  export const Getcustomeroutstanding = async () => {
     const token = await getToken(); // Get token from AsyncStorage
   
   
     try {
-      const response = await axios.get(`http://jemapps.in/api/collection/get-ost/${startDate}/${endDate}`,{
+      const response = await axios.get(`http://jemapps.in/api/collection/get-ost`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log(">>>>>>>>>>>",response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get customer outstanding successfully'
+      };
+    } catch (error) {
+      console.error('Error get outstanding:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+  export const SearchOutstandings = async (query) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/search-ost/${query}`,{
         headers: {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
@@ -473,6 +527,34 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
         success: true,
         data: response.data,
         message: 'Get customer outstanding successfully'
+      };
+    } catch (error) {
+      console.error('Error get outstanding:', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Failed to post invoice'
+      };
+    }
+  };
+
+  export const GetOsInvoices = async (acno, routes) => {
+    const token = await getToken(); // Get token from AsyncStorage
+  
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/collection/get-ost-invoice/${acno}/${routes}`,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+      console.log(">>>>>>>>>>>",response.data);
+      
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Get customer outstanding Invoice successfully'
       };
     } catch (error) {
       console.error('Error get outstanding:', error);

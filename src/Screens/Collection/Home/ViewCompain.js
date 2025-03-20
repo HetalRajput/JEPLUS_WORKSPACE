@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { GetcollectionComplain } from '../../../Constant/Api/Collectionapi/Apiendpoint';
+import { TextInput } from 'react-native-paper';
+import { GetcollectionComplain, SearchComplaints } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import ComplainCard from '../../../Components/Collection/ComplainCard';
+import { Color } from '../../../Constant/Constants';
 
 const ComplainScreen = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredData, setFilteredData] = useState([]);
 
   const fetchComplaints = async () => {
+    setLoading(true);
     try {
       const response = await GetcollectionComplain();
-     
-      
       console.log('API Response:', response);
 
       if (response?.data && response.data.length > 0) {
-        // Map the API response to match the expected structure
-        const formattedComplaints = response.data.map(complaint => ({
+        const formattedComplaints = response.data.map((complaint) => ({
           id: complaint.ComplaintID,
           name: `${complaint.Name}`,
           description: complaint.Desc1,
-          date: new Date(complaint.vdt).toLocaleDateString(), // Format date
-          status: 'Pending', // Default status, as it's not provided in the data
+          date: new Date(complaint.vdt).toLocaleDateString(),
+          status: 'Pending',
           enteredBy: complaint.EnteredBy,
           vno: complaint.Vno,
           acno: complaint.acno,
         }));
         setComplaints(formattedComplaints);
+        setFilteredData(formattedComplaints);
       } else {
         Alert.alert('No complaints found');
       }
@@ -38,6 +41,38 @@ const ComplainScreen = () => {
     }
   };
 
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+
+    if (query.trim().length === 0) {
+      setFilteredData(complaints);
+      return;
+    }
+
+    try {
+      const searchResponse = await SearchComplaints(query);
+
+      if (searchResponse?.data && searchResponse.data.length > 0) {
+        const formattedSearchResults = searchResponse.data.map((complaint) => ({
+          id: complaint.ComplaintID,
+          name: `${complaint.Name}`,
+          description: complaint.Desc1,
+          date: new Date(complaint.vdt).toLocaleDateString(),
+          status: 'Pending',
+          enteredBy: complaint.EnteredBy,
+          vno: complaint.Vno,
+          acno: complaint.acno,
+        }));
+        setFilteredData(formattedSearchResults);
+      } else {
+        setFilteredData(complaints);
+      }
+    } catch (error) {
+      console.error('Error searching complaints:', error);
+      Alert.alert('Failed to fetch search results');
+    }
+  };
+
   useEffect(() => {
     fetchComplaints();
   }, []);
@@ -45,17 +80,29 @@ const ComplainScreen = () => {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#007BFF" />
+        <ActivityIndicator size="large" color={Color.primeBlue} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      
-      {complaints.length > 0 ? (
+      {/* Search Input */}
+      <TextInput
+        label="Search Complaint"
+        value={searchQuery}
+        onChangeText={handleSearch}
+        mode="outlined"
+        style={styles.searchInput}
+        outlineColor={Color.primeBlue}
+        activeOutlineColor={Color.primeBlue}
+        placeholder="Search by Invoice Number"
+        theme={{ colors: { primary: Color.primeBlue } }}
+      />
+
+      {filteredData.length > 0 ? (
         <FlatList
-          data={complaints}
+          data={filteredData}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <ComplainCard
@@ -83,13 +130,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-   
+
+    paddingTop: 10,
   },
-  header: {
-    fontSize: 24,
-    fontFamily: 'Poppins-Bold',
-    color: '#333',
-    marginBottom: 10,
+  searchInput: {
+   
+    marginHorizontal: 5,
+    fontFamily: 'Poppins-Regular',
+    borderRadius: 30,          // Increased border radius
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   noDataText: {
     textAlign: 'center',

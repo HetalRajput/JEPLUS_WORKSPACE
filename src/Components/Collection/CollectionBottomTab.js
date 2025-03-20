@@ -23,6 +23,7 @@ import SearchCustomer from '../../Screens/Collection/Order/SearchCustomer';
 import SummaryScreen from '../../Screens/Collection/Home/ShowSummery';
 import ComplainScreen from '../../Screens/Collection/Home/ViewCompain';
 import OutstandingScreen from '../../Screens/Collection/Home/Viewoutstanding';
+import ViewInvoicesScreen from '../../Screens/Collection/Home/viewosinvoice';
 
 
 const Tab = createBottomTabNavigator();
@@ -35,8 +36,9 @@ const HomeStack = () => (
     <Stack.Screen name="Summary" component={SummaryScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Complains" component={ComplainScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Outstanding" component={ OutstandingScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Invoice" component={ ViewInvoicesScreen} options={{ headerShown: true }} />
 
-   
+    
   </Stack.Navigator>
 );
 

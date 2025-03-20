@@ -1,46 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Getcustomeroutstanding } from '../../../Constant/Api/Collectionapi/Apiendpoint';
+import { View, FlatList, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { TextInput } from 'react-native-paper';
+import { Getcustomeroutstanding, SearchOutstandings } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import OutstandingCard from '../../../Components/Collection/Outstandingcard';
 import { Color } from '../../../Constant/Constants';
 
-const OutstandingScreen = () => {
+const OutstandingScreen = ({ navigation }) => {
   const [outstandings, setOutstandings] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Function to format date as yyyy/mm/dd
-  const formatDate = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
+  // Fetch outstanding data
   const fetchOutstandings = async () => {
     setLoading(true);
     try {
-      const startDateFormatted = formatDate(startDate);
-      const endDateFormatted = formatDate(endDate);
-
-      const response = await Getcustomeroutstanding(startDateFormatted, endDateFormatted);
-
-      console.log('API Response:', response);
+      const response = await Getcustomeroutstanding();
 
       if (response?.data && response.data.length > 0) {
-        const formattedData = response.data.map(item => ({
-          id: `${item.Acno}-${item.Vno}`,  // Create unique id
+        const formattedData = response.data.map((item, index) => ({
+          id: `${item.Acno}-${item.Vno || index}`, // Ensure unique ID
           name: item.Name,
-          osamt: item.Osamt,
-          vno: item.Vno,
+          osamt: item.totalOst,
           routes: item.routes,
           date: new Date(item.vdt).toLocaleDateString(),
-          acno: item.Acno
+          acno: item.Acno,
+          vno: item.Vno || 'N/A', // Handle missing Vno
         }));
         setOutstandings(formattedData);
       } else {
@@ -54,72 +39,86 @@ const OutstandingScreen = () => {
     }
   };
 
+  // Handle search
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+
+    if (query.trim().length === 0) {
+      setSearchResults([]); // Clear search results when query is empty
+      return;
+    }
+
+    try {
+      const searchResponse = await SearchOutstandings(query);
+
+      if (searchResponse?.data && searchResponse.data.length > 0) {
+        const formattedSearchResults = searchResponse.data.map((item, index) => ({
+          id: `${item.Acno}-${item.Vno || index}`, // Unique ID
+          name: item.Name,
+          osamt: item.Osamt,
+          vno: item.Vno || 'N/A',
+          routes: item.routes,
+          date: new Date(item.vdt).toLocaleDateString(),
+          acno: item.Acno,
+        }));
+        setSearchResults(formattedSearchResults);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching outstanding data:', error);
+      Alert.alert('Failed to fetch search results');
+    }
+  };
+
   useEffect(() => {
     fetchOutstandings();
-  }, [startDate, endDate]); // Fetch data when dates change
+  }, []);
 
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#007BFF" />
+        <ActivityIndicator size="large" color={Color.primeBlue} />
       </View>
     );
   }
 
+  const renderItem = ({ item }) => (
+    <OutstandingCard
+      name={item.name}
+      osamt={item.osamt}
+      vno={item.vno}
+      routes={item.routes}
+      date={item.date}
+      acno={item.acno}
+      navigation={navigation}
+    />
+  );
+
   return (
     <View style={styles.container}>
-      {/* Date Pickers */}
-      <View style={styles.datePickerContainer}>
-        <TouchableOpacity onPress={() => setShowStartPicker(true)}>
-          <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-          <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Search Input */}
+      <TextInput
+        label="Search Outstanding"
+        value={searchQuery}
+        onChangeText={handleSearch}
+        mode="outlined"
+        style={styles.searchInput}
+        outlineColor={Color.primeBlue}
+        activeOutlineColor={Color.primeBlue}
+        placeholder="Enter Party Name"
+        theme={{ colors: { primary: Color.primeBlue } }}
+      />
 
-      {showStartPicker && (
-        <DateTimePicker
-          value={startDate}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowStartPicker(false);
-            if (selectedDate) setStartDate(selectedDate);
-          }}
-        />
-      )}
-
-      {showEndPicker && (
-        <DateTimePicker
-          value={endDate}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowEndPicker(false);
-            if (selectedDate) setEndDate(selectedDate);
-          }}
-        />
-      )}
-
-      {outstandings.length > 0 ? (
-        <FlatList
-          data={outstandings}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <OutstandingCard
-              name={item.name}
-              osamt={item.osamt}
-              vno={item.vno}
-              routes={item.routes}
-              date={item.date}
-              acno={item.acno}
-            />
-          )}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
+      {searchQuery.length > 0 && searchResults.length === 0 ? (
+        <Text style={styles.noDataText}>No matching records found</Text>
       ) : (
-        <Text style={styles.noDataText}>No outstanding data available</Text>
+        <FlatList
+          data={searchQuery.length > 0 ? [...searchResults, ...outstandings] : outstandings}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+        />
       )}
     </View>
   );
@@ -131,27 +130,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    paddingTop: 10,
   },
-  datePickerContainer: {
-    flexDirection: 'row',
-    alignItems:"center",
-    justifyContent:"center",
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-   
-  },
-  dateText: {
-    fontSize: 16,
+  searchInput: {
+    marginHorizontal: 10, 
     fontFamily: 'Poppins-Regular',
-    color: '#007BFF',
-    borderWidth:1,
-    paddingVertical:10,
-    paddingHorizontal:45,
-    margin:5,
-    borderRadius:10,
-    borderColor:Color.primeBlue
-    
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    marginBottom:15
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   noDataText: {
     textAlign: 'center',

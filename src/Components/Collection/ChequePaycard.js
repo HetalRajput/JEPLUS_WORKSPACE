@@ -33,20 +33,20 @@ export const ChequePayCard = ({ selectedInvoices, navigation, totalOSAmount }) =
   useEffect(() => {
     const collectedAmount = parseFloat(amount) || 0;
     let remainingAmount = collectedAmount;
-
+  
     const updatedPaymentStatus = selectedInvoices.map((invoice) => {
       if (remainingAmount <= 0) {
         return { ...invoice, status: "Unpaid", paidAmount: 0 };
-      } else if (remainingAmount >= invoice.rawAmount) {
-        remainingAmount -= invoice.rawAmount;
-        return { ...invoice, status: "Paid", paidAmount: invoice.rawAmount };
+      } else if (remainingAmount >= invoice.ostAmt) {
+        remainingAmount -= invoice.ostAmt;
+        return { ...invoice, status: "Paid", paidAmount: invoice.ostAmt };
       } else {
         const paidAmount = remainingAmount;
         remainingAmount = 0;
         return { ...invoice, status: "Partially Paid", paidAmount };
       }
     });
-
+  
     setPaymentStatus(updatedPaymentStatus);
   }, [amount, selectedInvoices]);
 

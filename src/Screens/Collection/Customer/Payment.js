@@ -16,7 +16,6 @@ const PaymentScreen = ({ route, navigation }) => {
   const { selectedInvoices, totalOSAmount } = route.params;
   const [selectedPayment, setSelectedPayment] = useState("cash");
 
-  console.log("Selected Invoices>>>>>>>>>>>>>>:", selectedInvoices);
 
   const renderPaymentCard = () => {
     switch (selectedPayment) {
