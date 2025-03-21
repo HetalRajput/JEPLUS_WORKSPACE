@@ -1,4 +1,4 @@
-package com.jeplusworkspace
+package com.jeplusx
 
 import android.app.Application
 import com.facebook.react.PackageList

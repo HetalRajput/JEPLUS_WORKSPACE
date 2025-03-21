@@ -1,15 +1,15 @@
 {
   "project_info": {
     "project_number": "589288088997",
-    "project_id": "jeplusworkspace-45674",
-    "storage_bucket": "jeplusworkspace-45674.firebasestorage.app"
+    "project_id": "jeplusx-45674",
+    "storage_bucket": "jeplusx-45674.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:589288088997:android:730fa54208c5db0249744c",
         "android_client_info": {
-          "package_name": "com.jeplusworkspace"
+          "package_name": "com.jeplusx"
         }
       },
       "oauth_client": [],

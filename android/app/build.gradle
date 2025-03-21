@@ -84,10 +84,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.jeplusworkspace"
+    namespace "com.jeplusx"
     
     defaultConfig {
-        applicationId "com.jeplusworkspace"
+        applicationId "com.jeplusx"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
