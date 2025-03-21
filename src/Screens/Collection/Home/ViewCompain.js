@@ -22,11 +22,13 @@ const ComplainScreen = () => {
           id: complaint.ComplaintID,
           name: `${complaint.Name}`,
           description: complaint.Desc1,
+          description1:complaint.Desc2,
           date: new Date(complaint.vdt).toLocaleDateString(),
           status: 'Pending',
           enteredBy: complaint.EnteredBy,
           vno: complaint.Vno,
           acno: complaint.acno,
+          ComplaintStatus:complaint.ComplaintStatus
         }));
         setComplaints(formattedComplaints);
         setFilteredData(formattedComplaints);
@@ -113,6 +115,8 @@ const ComplainScreen = () => {
               enteredBy={item.enteredBy}
               vno={item.vno}
               acno={item.acno}
+              ComplaintStatus={item.ComplaintStatus}
+              description1={item.description1}
             />
           )}
           contentContainerStyle={{ paddingBottom: 20 }}

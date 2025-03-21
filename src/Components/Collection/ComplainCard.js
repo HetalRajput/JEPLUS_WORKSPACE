@@ -2,12 +2,18 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const ComplainCard = ({ name, description, date, enteredBy, vno, acno }) => {
+const ComplainCard = ({ name, description, date, enteredBy, vno, acno, description1, ComplaintStatus }) => {
+    // Determine badge color based on ComplaintStatus
+    const badgeColor = ComplaintStatus === 'Closed' ? '#4CAF50' : '#FF9800';
+
     return (
         <View style={styles.card}>
             {/* Header Section */}
             <View style={styles.cardHeader}>
                 <Text style={styles.name}>{name}</Text>
+                <View style={[styles.badge, { backgroundColor: badgeColor }]}>
+                    <Text style={styles.badgeText}>{ComplaintStatus}</Text>
+                </View>
             </View>
 
             {/* Date */}
@@ -20,14 +26,14 @@ const ComplainCard = ({ name, description, date, enteredBy, vno, acno }) => {
                     <Text style={styles.cardLabel}>Entered By:</Text>
                     <Text style={styles.cardValue}>{enteredBy}</Text>
                 </View>
-                
+
                 <View style={styles.infoContainer}>
                     <Icon name="receipt" size={20} color="#FF9800" />
                     <Text style={styles.cardLabel}>V No:</Text>
                     <Text style={styles.cardValue}>{vno}</Text>
                 </View>
             </View>
-           
+
             <View style={styles.cardContent}>
                 <View style={styles.infoContainer}>
                     <Icon name="account-balance" size={20} color="#2196F3" />
@@ -36,8 +42,13 @@ const ComplainCard = ({ name, description, date, enteredBy, vno, acno }) => {
                 </View>
             </View>
 
-            {/* Description at the End in Italic */}
+            {/* Description */}
             <Text style={styles.description}>{description}</Text>
+
+            {/* Additional Description */}
+            {description1 && (
+                <Text style={styles.description}>{description1}</Text>
+            )}
         </View>
     );
 };
@@ -68,6 +79,17 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#333',
+        width:"70%"
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    badgeText: {
+        fontSize: 12,
+        color: '#fff',
+        fontWeight: 'bold',
     },
     cardDate: {
         fontSize: 12,
@@ -98,7 +120,7 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 14,
         color: '#555',
-        fontStyle: 'italic',    // Italic description
+        fontStyle: 'italic',
         marginTop: 12,
         lineHeight: 20,
     },

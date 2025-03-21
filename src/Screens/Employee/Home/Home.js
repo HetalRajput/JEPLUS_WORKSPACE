@@ -1,361 +1,338 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  FlatList,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import React from 'react';
+import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getUserInfo } from '../../../Constant/Api/Apiendpoint';
+import LinearGradient from 'react-native-linear-gradient';
+import { Color } from '../../../Constant/Constants';
 
-const HomeScreen = ({navigation}) => {
-  const [recentActivities, setRecentActivities] = useState([
-    {
-      id: '1',
-      title: 'Check In',
-      time: '09:15 am',
-      status: 'Late',
-      points: '+5 pt',
-      color: '#34C759',
-      icon: 'log-in-outline',
-    },
-    {
-      id: '2',
-      title: 'Check Out',
-      time: '05:02 pm',
-      status: 'Ontime',
-      points: '+100 pt',
-      color: '#FF3B30',
-      icon: 'log-out-outline',
-    },
-    {
-      id: '3',
-      title: 'Overtime',
-      time: '06:01 - 10:59 pm',
-      duration: '5h 30m',
-      points: '+$120.00',
-      color: '#5AC8FA',
-      icon: 'time-outline',
-    },
-  ]);
-
-  const [currentDate, setCurrentDate] = useState('');
-  const [userName, setUserName] = useState('Welcome');
-
-  const loadMoreData = () => {
-    const newActivities = [
-      {
-        id: '4',
-        title: 'Check In',
-        time: '08:45 am',
-        status: 'Ontime',
-        points: '+10 pt',
-        color: '#34C759',
-        icon: 'log-in-outline',
-      },
-      {
-        id: '5',
-        title: 'Check Out',
-        time: '04:55 pm',
-        status: 'Ontime',
-        points: '+100 pt',
-        color: '#FF3B30',
-        icon: 'log-out-outline',
-      },
+const HomeScreen = () => {
+    const coworkers = [
+        { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png') },
+        { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png') },
+        { id: 3, name: 'Sheyam', image: require('../../../Assets/Image/profile.png') },
+        { id: 4, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
+        { id: 5, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
+        { id: 6, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
+        { id: 7, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
+        { id: 8, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
     ];
-    setRecentActivities([...recentActivities, ...newActivities]);
-  };
 
-  const greet = () => {
-    const currentHour = new Date().getHours();
+    return (
+        <View style={styles.container}>
+            {/* Header */}
+            <LinearGradient colors={['#007bff', '#0056b3']} style={styles.header}>
+                <Image source={require('../../../Assets/Image/profile.png')} style={styles.profileImg} />
+                <View style={styles.headerTextContainer}>
+                    <Text style={styles.name}>Bittu Kumar</Text>
+                    <Text style={styles.role}>Supplyman • JE020</Text>
+                </View>
+                <View style={styles.status}>
+                    <Text style={styles.statusText}>Active</Text>
+                </View>
+            </LinearGradient>
 
-    if (currentHour < 12) {
-      return 'Morning';
-    } else if (currentHour < 18) {
-      return 'Afternoon';
-    } else {
-      return 'Evening';
-    }
-  };
+            {/* Working Day Stats */}
+            <View style={styles.statsContainer}>
+                <Text style={styles.sectionTitle}>Your Working Day</Text>
+                <View style={styles.stats}>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>20</Text>
+                        <Text style={styles.statLabel}>Present Days</Text>
+                    </View>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>2</Text>
+                        <Text style={styles.statLabel}>Absent Days</Text>
+                    </View>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>1</Text>
+                        <Text style={styles.statLabel}>Half Days</Text>
+                    </View>
+                </View>
+            </View>
 
-  useEffect(() => {
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString('en-US', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    setCurrentDate(formattedDate);
+            {/* Check-In & Check-Out */}
+            <View style={styles.checkContainer}>
+                <Text style={styles.dateText}>12 March 2025</Text>
+                <View style={styles.checkBoxContainer}>
+                    <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkInBox]}>
+                        <Text style={styles.checkTime}>08:00 AM</Text>
+                        <Text style={styles.checkLabel}>Check In</Text>
+                    </LinearGradient>
+                    <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkOutBox]}>
+                        <Text style={styles.checkTime}>05:00 PM</Text>
+                        <Text style={styles.checkLabel}>Check Out</Text>
+                    </LinearGradient>
+                </View>
+            </View>
 
-    // Fetch user info from API
-    const fetchUserInfo = async () => {
-      try {
-        const response = await getUserInfo(); // Call API
-    
-        
-        if (response && response.data) {
-          setUserName(response.data.empName || 'Welcome'); // Set username
-        }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-      }
-    };
+            {/* Actions */}
+   
 
-    fetchUserInfo();
-  }, []);
+            <View style={{backgroundColor:"white"}}>
 
-  const renderRecentActivity = ({ item }) => (
-    <View style={styles.activityCard}>
-      <View
-        style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}
-      >
-        <Icon name={item.icon} size={20} color={item.color} />
-      </View>
-      <View style={styles.activityDetails}>
-        <Text style={styles.activityTitle}>{item.title}</Text>
-        <Text style={styles.activityTime}>{item.time}</Text>
-      </View>
-      <View>
-        <Text style={styles.activityStatus}>{item.status || item.duration}</Text>
-        <Text style={styles.activityPoints}>{item.points}</Text>
-      </View>
-    </View>
-  );
+          
+            <View style={styles.actionsContainer}>
+                <View style={styles.actionRow}>
+                    <ActionButton icon="calendar" label="Leave" />
+                    <ActionButton icon="cash-outline" label="Salary" />
+                    <ActionButton icon="time-outline" label="Overtime" />
+                    <ActionButton icon="clipboard" label="Attendance" />
+                </View>
+            </View>
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>
-            {greet()}, {userName} ✌️
-          </Text>
-          <Text style={styles.date}>{currentDate}</Text>
+            {/* Co-Workers */}
+            <View style={styles.coWorkersContainer}>
+             
+                <FlatList
+                    data={coworkers}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <View style={styles.coWorker}>
+                            <Image source={item.image} style={styles.coWorkerImg} />
+                            <Text style={styles.coWorkerName}>{item.name}</Text>
+                        </View>
+                    )}
+                    keyExtractor={(item) => item.id.toString()}
+                />
+            </View>
+
+            {/* Pending Approval */}
+            <View style={{flexDirection:"row",justifyContent:"space-between"}}>
+
+            <View style={styles.pendingContainer}>
+                <Text style={styles.pendingCount}>04</Text>
+                <Text style={styles.pendingLabel}>Leave Requests</Text>
+            </View>
+            <View style={styles.pendingContainer}>
+                <Text style={styles.pendingCount}>04</Text>
+                <Text style={styles.pendingLabel}>Leave Requests</Text>
+            </View>
+
+            </View>
+
+            </View>
+          
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-        <Image
-          source={require('../../../Assets/Image/profile.png')}
-          style={styles.profileImage}
-        />
-        </TouchableOpacity>
-      </View>
-
-      {/* Time Cards */}
-      <View style={styles.timeCardContainer}>
-        <View style={[styles.timeCard, { backgroundColor: '#EAF8E7' }]}>
-          <View style={styles.iconWrapper}>
-            <Icon name="log-in-outline" size={28} color="#34C759" />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Check In</Text>
-            <Text style={styles.cardTime}>08:30 am</Text>
-            <Text style={styles.cardPoints}>+150 pt</Text>
-          </View>
-        </View>
-        <View style={[styles.timeCard, { backgroundColor: '#FEEBEC' }]}>
-          <View style={styles.iconWrapper}>
-            <Icon name="log-out-outline" size={28} color="#FF3B30" />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Check Out</Text>
-            <Text style={styles.cardTime}>05:10 pm</Text>
-            <Text style={styles.cardPoints}>+100 pt</Text>
-          </View>
-        </View>
-        <View style={[styles.timeCard, { backgroundColor: '#EBF6FF' }]}>
-          <View style={styles.iconWrapper}>
-            <Icon name="time-outline" size={28} color="#5AC8FA" />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Start Overtime</Text>
-            <Text style={styles.cardTime}>06:01 pm</Text>
-            <Text style={styles.cardDescription}>
-              Project revision from...
-            </Text>
-          </View>
-        </View>
-        <View style={[styles.timeCard, { backgroundColor: '#EBF6FF' }]}>
-          <View style={styles.iconWrapper}>
-            <Icon name="time-outline" size={28} color="#5AC8FA" />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Finish Overtime</Text>
-            <Text style={styles.cardTime}>11:10 pm</Text>
-            <Text style={styles.cardPoints}>5h 00m +$120.00</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Recent Activity Section */}
-      <View style={styles.recentActivitySection}>
-        <View style={styles.recentActivityHeader}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <TouchableOpacity onPress={loadMoreData}>
-            <Text style={styles.seeMore}>See more</Text>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          data={recentActivities}
-          renderItem={renderRecentActivity}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false} // Disable FlatList scrolling, let ScrollView handle it
-        />
-      </View>
-    </ScrollView>
-  );
+    );
 };
 
-
-
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F8F8',
-    paddingHorizontal: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  date: {
-    fontSize: 14,
-    color: '#555',
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  timeCardContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginVertical: 20,
-    marginHorizontal:1,
-  },
-  timeCard: {
-    width: '48%',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  iconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-  },
-  cardContent: {
-    alignItems: 'flex-start',
-  },
-  cardTitle: {
-    fontSize: 14,
-    color: '#555',
-  },
-  cardTime: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 8,
-    color: '#333',
-  },
-  cardPoints: {
-    fontSize: 14,
-    color: '#34C759',
-    fontWeight: '600',
-  },
-  cardDescription: {
-    fontSize: 12,
-    color: '#555',
-  },
-  recentActivitySection: {
-    marginTop: 20,
-  },
-  recentActivityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  seeMore: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  activityCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 10,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 5,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activityDetails: {
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  activityTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  activityTime: {
-    fontSize: 12,
-    color: '#555',
-  },
-  activityStatus: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FF3B30',
-    textAlign: 'right',
-  },
-  activityPoints: {
-    fontSize: 12,
-    color: '#333',
-    textAlign: 'right',
-  },
-});
+// Action Button Component
+const ActionButton = ({ icon, label }) => (
+    <TouchableOpacity style={styles.actionButton}>
+        <View style={styles.actionIconContainer}>
+            <Icon name={icon} size={24} color="#007bff" />
+        </View>
+        <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+);
 
 export default HomeScreen;
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'white',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        paddingTop: 20,
+        paddingBottom: 30,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+        paddingBottom:110
+    },
+    profileImg: {
+        width: 50,
+        height: 50,
+        borderRadius: 30,
+        marginRight: 15,
+        borderWidth: 2,
+        borderColor: '#fff',
+    },
+    headerTextContainer: {
+        flex: 1,
+    },
+    name: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    role: {
+        fontSize: 14,
+        color: '#ddd',
+    },
+    status: {
+        backgroundColor: '#28a745',
+        borderRadius: 15,
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+    },
+    statusText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    statsContainer: {
+        backgroundColor: Color.primedarkblue,
+        marginHorizontal:10,
+        borderRadius: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        marginTop:-80,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#fff',
+        padding:10
+    },
+    stats: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor:"white",
+        padding:10,
+        borderRadius:10,
+        paddingBottom:50
+    },
+    statBox: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#007bff',
+    },
+    statLabel: {
+        fontSize: 14,
+        color: '#777',
+        marginTop: 5,
+    },
+    checkContainer: {
+        backgroundColor: Color.blue,
+        padding: 10,
+        margin: 10,
+        borderRadius: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        marginTop:-40,
+    },
+    dateText: {
+        fontSize: 16,
+        color: '#fff',
+        marginBottom: 15,
+    },
+    checkBoxContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    checkBox: {
+        flex: 1,
+        padding: 20,
+        marginHorizontal: 5,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkInBox: {
+        backgroundColor: '#007bff',
+    },
+    checkOutBox: {
+        backgroundColor: '#f39c12',
+    },
+    checkTime: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: Color.primedarkblue,
+    },
+    checkLabel: {
+        fontSize: 14,
+        color: Color.primedarkblue,
+        marginTop: 5,
+    },
+    actionsContainer: {
+        backgroundColor: '#fff',
+        margin: 10,
+        borderRadius: 15,
+        shadowColor: '#000',
+        borderWidth:.5,
+        paddingVertical:10,
+        borderColor:Color.primedarkblue,
+        marginBottom:20
+        
+   
+    },
+    actionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    actionButton: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    actionIconContainer: {
+        backgroundColor: '#e6f2ff',
+        padding: 15,
+        borderRadius: 15,
+    },
+    actionLabel: {
+        fontSize: 14,
+        marginTop: 10,
+        color: '#555',
+        textAlign: 'center',
+    },
+    coWorkersContainer: {
+        paddingHorizontal:10,
+    },
+    coWorker: {
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    coWorkerImg: {
+        width: 55,
+        height: 55,
+        borderRadius: 35,
+        borderWidth: 2,
+        borderColor: '#007bff',
+    },
+    coWorkerName: {
+        fontSize: 14,
+        marginTop: 10,
+        color: '#333',
+    },
+    pendingContainer: {
+        backgroundColor: '#fff',
+        margin: 10,
+        borderRadius: 15,
+        paddingVertical: 13,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        width:"45%"
+    },
+    pendingCount: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#007bff',
+    },
+    pendingLabel: {
+        fontSize: 16,
+        color: '#555',
+        marginTop: 10,
+    },
+});
