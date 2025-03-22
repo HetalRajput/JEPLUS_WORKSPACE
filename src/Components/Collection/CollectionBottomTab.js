@@ -24,6 +24,7 @@ import SummaryScreen from '../../Screens/Collection/Home/ShowSummery';
 import ComplainScreen from '../../Screens/Collection/Home/ViewCompain';
 import OutstandingScreen from '../../Screens/Collection/Home/Viewoutstanding';
 import ViewInvoicesScreen from '../../Screens/Collection/Home/viewosinvoice';
+import CollectionHistoryInvScreen from '../../Screens/Collection/History/CollectionHistoryInvoices';
 
 
 const Tab = createBottomTabNavigator();
@@ -68,6 +69,7 @@ const ProfileStack = () => (
 const HistoryStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="HistoryMain" component={CollectionHistoryScreen}  />
+    <Stack.Screen name="Invoices" component={CollectionHistoryInvScreen} options={{ headerShown: true }}/>
   </Stack.Navigator>
 );
 

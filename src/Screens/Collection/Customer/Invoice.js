@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Color } from '../../../Constant/Constants';
 import { getCustomerInvoice } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import { UncollectionButton } from '../../../Components/Collection/Uncollection';
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
 
 const InvoiceScreen = ({ navigation, route }) => {
   const { tagNo, acno } = route.params;
@@ -19,9 +20,19 @@ const InvoiceScreen = ({ navigation, route }) => {
   // Check if all invoices are pending
   const allInvoicesPending = invoices.every((invoice) => invoice.status === 'Pending');
 
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
+  // Use useFocusEffect to reload data when the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      // Reset states when the screen is focused
+      setSelectedInvoices([]);
+      setTotalSelectedAmount(0);
+      setTotalOSAmount(0);
+      setTotalAmount(0);
+
+      // Fetch invoices
+      fetchInvoices();
+    }, [])
+  );
 
   // Fetch invoices from the API
   const fetchInvoices = async () => {
@@ -42,6 +53,7 @@ const InvoiceScreen = ({ navigation, route }) => {
           ostAmt: invoice.OSAmount || 0, // Store OS Amount for calculations
           tagNo: tagNo,
           status: invoice.status || 'Pending', // Add status field
+          picked: false, // Initialize picked as false
         }));
 
         setInvoices(formattedInvoices);
@@ -90,6 +102,8 @@ const InvoiceScreen = ({ navigation, route }) => {
     navigation.navigate('Pay', {
       selectedInvoices,
       totalOSAmount,
+      tagNo,
+      acno
     });
   };
 
@@ -174,11 +188,11 @@ const InvoiceScreen = ({ navigation, route }) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-
   },
   listContainer: {
     paddingBottom: 80, // Add padding to avoid overlap with the bottom bar
@@ -284,7 +298,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   uncollectContainer: { position: 'absolute', bottom: 10, width: '100%', paddingHorizontal: 10 },
-
 });
 
 export default InvoiceScreen;

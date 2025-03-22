@@ -12,7 +12,7 @@ import { CashPayCard } from "../../../Components/Collection/CashPaycard";
 import { ChequePayCard } from "../../../Components/Collection/ChequePaycard";
 import { UpiPayCard } from "../../../Components/Collection/Upipaycard";
 
-const PaymentScreen = ({ route, navigation }) => {
+const PaymentScreen = ({ route, navigation  ,tagNo,acno}) => {
   const { selectedInvoices, totalOSAmount } = route.params;
   const [selectedPayment, setSelectedPayment] = useState("cash");
 
@@ -24,18 +24,24 @@ const PaymentScreen = ({ route, navigation }) => {
         selectedInvoices={selectedInvoices } // Pass the selected invoices
         totalOSAmount={totalOSAmount}
         navigation={navigation} // Pass the navigation prop
+        tagNo={tagNo}
+        acno={acno}
         />;
       case "upi":
         return <UpiPayCard
         selectedInvoices={selectedInvoices} // Pass the selected invoices
         totalOSAmount={totalOSAmount}
         navigation={navigation} // Pass the navigation prop
+        tagNo={tagNo}
+        acno={acno}
         />;
       case "cheque":
         return <ChequePayCard
         selectedInvoices={selectedInvoices} // Pass the selected invoices
         totalOSAmount={totalOSAmount}
         navigation={navigation} // Pass the navigation prop
+        tagNo={tagNo}
+        acno={acno}
         />;
       default:
         return null;

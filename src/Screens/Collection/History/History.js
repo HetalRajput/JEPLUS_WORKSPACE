@@ -3,6 +3,7 @@ import {
     View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Dimensions, RefreshControl, ActivityIndicator
 } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { Color } from '../../../Constant/Constants';
@@ -36,6 +37,7 @@ function reducer(state, action) {
 
 // Collection History Component
 const CollectionHistory = ({ startDate, endDate }) => {
+    const navigation = useNavigation(); // Use the useNavigation hook
     const [state, dispatch] = useReducer(reducer, initialState);
 
     const fetchCollection = useCallback(async () => {
@@ -45,19 +47,18 @@ const CollectionHistory = ({ startDate, endDate }) => {
             const formattedEndDate = moment(endDate).format('YYYY-MM-DD');
 
             const response = await GetCollectionhistory(formattedStartDate, formattedEndDate);
-            console.log(response);
-            
+
             if (response.success) {
                 const formattedData = response.data.map(item => ({
-                    id: item.VNo.toString(),
-                    date: item.CollectedDate,
-                    amount: item.Amt,
-                    status: item.PayMethod === 'Cash' ? 'COLLECTED' : 'UNCOLLECTED',
-                    billNo: item.BillNo,
-                    name: item.Name,
-                    invoiceNo: item.VNo,
-                    CollectedAmount: item.CollectedAmount
+                    name: item.Name, // Name of the customer
+                    tagNo: item.TAGNo, // TAG number
+                    acno: item.acno, // Account number
+                    invCount: item.inv_count, // Invoice count
+                    totalAmt: item.totalAmt, // Total amount for the customer
+                    totalCollectedAmt: item.totalCollectedAmt, // Total collected amount for the customer
+                    totalOsAmt: item.totalOsAmt, // Total outstanding amount for the customer
                 }));
+
                 dispatch({ type: 'FETCH_SUCCESS', payload: { key: 'collectionData', data: formattedData } });
             } else {
                 dispatch({ type: 'FETCH_ERROR', payload: 'Failed to fetch collection history.' });
@@ -77,7 +78,17 @@ const CollectionHistory = ({ startDate, endDate }) => {
     };
 
     const renderItem = ({ item }) => (
-        <CollectionHistoryCard item={item} />
+        <TouchableOpacity
+            onPress={() => navigation.navigate('Invoices', {
+                startDate,
+                endDate,
+                acno: item.acno, // Pass acno from the item
+                tagNo: item.tagNo, // Pass tagNo from the item
+            })}
+            activeOpacity={.9}
+        >
+            <CollectionHistoryCard item={item} />
+        </TouchableOpacity>
     );
 
     if (state.loading) {
@@ -93,7 +104,7 @@ const CollectionHistory = ({ startDate, endDate }) => {
             <FlatList
                 data={state.collectionData}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.acno.toString()}
                 ListEmptyComponent={<Text style={styles.emptyText}>No Collection History</Text>}
                 contentContainerStyle={{ paddingBottom: 20 }}
                 refreshControl={

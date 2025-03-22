@@ -16,7 +16,7 @@ import ImagePicker from "react-native-image-crop-picker";
 import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
 import { RadioButton } from "react-native-paper";
 
-export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => {
+export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo ,acno }) => {
   const totalAmount = totalOSAmount;
 
   const [amount, setAmount] = useState(totalAmount.toString());
@@ -96,7 +96,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
           vno: String(invoice.invoiceNo),
           tagno: String(invoice.tagNo),
           amount: String(invoice.paidAmount),
-          paymethod: invoice.paymethod || "Cash",
+          paymethod: "Cash",
           CollBoyRemarks: selectedReason || "success", // Include selectedReason in remarks
         }))
       )
@@ -175,7 +175,8 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount }) => 
     setSelectedReason(""); // Reset selected reason
 
     // Navigate back to the previous screen
-    navigation.navigate("CustomerMain");
+    navigation.navigate("Invoices",{tagNo , acno})
+
   };
 
   const handleErrorModalClose = () => {

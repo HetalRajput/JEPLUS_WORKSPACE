@@ -265,8 +265,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
       });
-  
- 
+    
   
       return {
         success: true,
@@ -282,6 +281,44 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
       };
     }
   };
+  export const getCollectionInv = async (acno, tagno, startDate, endDate) => {
+    // Convert startDate and endDate to strings (if they are not already)
+    const startDateStr = startDate ? new Date(startDate).toISOString() : '';
+    const endDateStr = endDate ? new Date(endDate).toISOString() : '';
+
+    // Slice the dates to extract YYYY-MM-DD
+    const slicedStartDate = startDateStr.slice(0, 10);
+    const slicedEndDate = endDateStr.slice(0, 10);
+
+    console.log('Sliced Start Date:', slicedStartDate);
+    console.log('Sliced End Date:', slicedEndDate);
+
+    const token = await getToken(); // Get token from AsyncStorage
+
+    try {
+        const response = await axios.get(
+            `http://jemapps.in/api/collection/collection-history-invoice/${acno}/${tagno}/${slicedStartDate}/${slicedEndDate}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+                },
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data,
+            message: 'Customers history fetched successfully',
+        };
+    } catch (error) {
+        console.error('Error fetching customers collection history:', error);
+
+        return {
+            success: false,
+            message: error.message || 'Failed to fetch customers collection history',
+        };
+    }
+};
 
 
   export const Markasvisit = async (body) => {
