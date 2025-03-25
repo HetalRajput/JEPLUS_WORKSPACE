@@ -27,7 +27,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
   const [missingData, setMissingData] = useState("");
   const [paymentStatus, setPaymentStatus] = useState([]);
   const [showReasons, setShowReasons] = useState(false);
-  const [selectedReason, setSelectedReason] = useState(""); // Add selectedReason state
+  const [selectedReason, setSelectedReason] = useState(" "); // Add selectedReason state
 
 
   useEffect(() => {

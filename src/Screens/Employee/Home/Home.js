@@ -1,19 +1,19 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Color } from '../../../Constant/Constants';
 
-const HomeScreen = () => {
+const HomeScreen = ({navigation}) => {
     const coworkers = [
-        { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png') },
-        { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png') },
-        { id: 3, name: 'Sheyam', image: require('../../../Assets/Image/profile.png') },
-        { id: 4, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
-        { id: 5, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
-        { id: 6, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
-        { id: 7, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
-        { id: 8, name: 'Rajesh', image: require('../../../Assets/Image/profile.png') },
+        { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png'), status: 'active' },
+        { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 3, name: 'Sheyam', image: require('../../../Assets/Image/profile.png'), status: 'active' },
+        { id: 4, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 5, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
+        { id: 6, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 7, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
+        { id: 8, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
     ];
 
     return (
@@ -64,61 +64,47 @@ const HomeScreen = () => {
                 </View>
             </View>
 
-            {/* Actions */}
-   
+            {/* Content Wrapper */}
+            <View style={styles.contentWrapper}>
+                {/* Actions */}
+                <View style={styles.actionsContainer}>
+                    <View style={styles.actionRow}>
+                        <ActionButton icon="calendar" label="Leave" onpress="View Leave" navigation={navigation}/>
+                        <ActionButton icon="cash-outline" label="Salary"  onpress="Salary" navigation={navigation}/>
+                        <ActionButton icon="time-outline" label="Overtime" onpress="Overtime" navigation={navigation}/>
+                        <ActionButton icon="clipboard" label="Attendance"  onpress="Attendance" navigation={navigation} />
+                    </View>
+                </View>
 
-            <View style={{backgroundColor:"white"}}>
-
-          
-            <View style={styles.actionsContainer}>
-                <View style={styles.actionRow}>
-                    <ActionButton icon="calendar" label="Leave" />
-                    <ActionButton icon="cash-outline" label="Salary" />
-                    <ActionButton icon="time-outline" label="Overtime" />
-                    <ActionButton icon="clipboard" label="Attendance" />
+                {/* Co-Workers */}
+                <View style={styles.coWorkersContainer}>
+                    <FlatList
+                        data={coworkers}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={({ item }) => (
+                            <View style={styles.coWorker}>
+                                <View style={styles.imageContainer}>
+                                    <Image source={item.image} style={styles.coWorkerImg} />
+                                    <View style={[
+                                        styles.statusIndicator,
+                                        item.status === 'active' ? styles.activeIndicator : styles.inactiveIndicator
+                                    ]} />
+                                </View>
+                                <Text style={styles.coWorkerName}>{item.name}</Text>
+                            </View>
+                        )}
+                        keyExtractor={(item) => item.id.toString()}
+                    />
                 </View>
             </View>
-
-            {/* Co-Workers */}
-            <View style={styles.coWorkersContainer}>
-             
-                <FlatList
-                    data={coworkers}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    renderItem={({ item }) => (
-                        <View style={styles.coWorker}>
-                            <Image source={item.image} style={styles.coWorkerImg} />
-                            <Text style={styles.coWorkerName}>{item.name}</Text>
-                        </View>
-                    )}
-                    keyExtractor={(item) => item.id.toString()}
-                />
-            </View>
-
-            {/* Pending Approval */}
-            <View style={{flexDirection:"row",justifyContent:"space-between"}}>
-
-            <View style={styles.pendingContainer}>
-                <Text style={styles.pendingCount}>04</Text>
-                <Text style={styles.pendingLabel}>Leave Requests</Text>
-            </View>
-            <View style={styles.pendingContainer}>
-                <Text style={styles.pendingCount}>04</Text>
-                <Text style={styles.pendingLabel}>Leave Requests</Text>
-            </View>
-
-            </View>
-
-            </View>
-          
         </View>
     );
 };
 
 // Action Button Component
-const ActionButton = ({ icon, label }) => (
-    <TouchableOpacity style={styles.actionButton}>
+const ActionButton = ({ icon, label , onpress ,navigation   }) => (
+    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate(onpress)}>
         <View style={styles.actionIconContainer}>
             <Icon name={icon} size={24} color="#007bff" />
         </View>
@@ -126,12 +112,14 @@ const ActionButton = ({ icon, label }) => (
     </TouchableOpacity>
 );
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'white',
+    },
+    contentWrapper: {
+        backgroundColor: 'white',
+        paddingBottom: 20,
     },
     header: {
         flexDirection: 'row',
@@ -146,7 +134,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 5,
-        paddingBottom:110
+        paddingBottom: 110
     },
     profileImg: {
         width: 50,
@@ -180,28 +168,28 @@ const styles = StyleSheet.create({
     },
     statsContainer: {
         backgroundColor: Color.primedarkblue,
-        marginHorizontal:10,
+        marginHorizontal: 10,
         borderRadius: 15,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        marginTop:-80,
+        marginTop: -80,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#fff',
-        padding:10
+        padding: 10
     },
     stats: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        backgroundColor:"white",
-        padding:10,
-        borderRadius:10,
-        paddingBottom:50
+        backgroundColor: "white",
+        padding: 10,
+        borderRadius: 10,
+        paddingBottom: 50
     },
     statBox: {
         alignItems: 'center',
@@ -227,7 +215,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        marginTop:-40,
+        marginTop: -40,
     },
     dateText: {
         fontSize: 16,
@@ -267,12 +255,10 @@ const styles = StyleSheet.create({
         margin: 10,
         borderRadius: 15,
         shadowColor: '#000',
-        borderWidth:.5,
-        paddingVertical:10,
-        borderColor:Color.primedarkblue,
-        marginBottom:20
-        
-   
+        borderWidth: 0.5,
+        paddingVertical: 10,
+        borderColor: Color.primedarkblue,
+        marginBottom: 20
     },
     actionRow: {
         flexDirection: 'row',
@@ -294,11 +280,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     coWorkersContainer: {
-        paddingHorizontal:10,
+        paddingHorizontal: 10,
     },
     coWorker: {
         alignItems: 'center',
         marginRight: 15,
+    },
+    imageContainer: {
+        position: 'relative',
     },
     coWorkerImg: {
         width: 55,
@@ -307,32 +296,27 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#007bff',
     },
+    statusIndicator: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 15,
+        height: 15,
+        borderRadius: 7.5,
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    activeIndicator: {
+        backgroundColor: '#28a745',
+    },
+    inactiveIndicator: {
+        backgroundColor: '#6c757d',
+    },
     coWorkerName: {
         fontSize: 14,
         marginTop: 10,
         color: '#333',
     },
-    pendingContainer: {
-        backgroundColor: '#fff',
-        margin: 10,
-        borderRadius: 15,
-        paddingVertical: 13,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        width:"45%"
-    },
-    pendingCount: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#007bff',
-    },
-    pendingLabel: {
-        fontSize: 16,
-        color: '#555',
-        marginTop: 10,
-    },
 });
+
+export default HomeScreen;
