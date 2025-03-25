@@ -6,28 +6,40 @@ import { Color } from '../../../Constant/Constants';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const SalaryScreen = () => {
+  const [selectedYear, setSelectedYear] = useState('2024');
   const [selectedMonth, setSelectedMonth] = useState('January');
 
   const salaryData = [
-    { month: 'January', basic: 50000, advance: 5000, deduction: 2000, overtime: 3000, leaves: 2, halfDays: 1, lateEntries: 3, totalDays: 31 },
-    { month: 'February', basic: 50000, advance: 7000, deduction: 1000, overtime: 2000, leaves: 1, halfDays: 0, lateEntries: 2, totalDays: 28 },
-    { month: 'March', basic: 50000, advance: 0, deduction: 0, overtime: 5000, leaves: 0, halfDays: 0, lateEntries: 0, totalDays: 31 },
-    { month: 'April', basic: 50000, advance: 3000, deduction: 500, overtime: 1000, leaves: 2, halfDays: 1, lateEntries: 1, totalDays: 30 },
+    { year: '2023', month: 'November', basic: 48000, advance: 4500, deduction: 1800, overtime: 2500, leaves: 3, halfDays: 2, lateEntries: 4, totalDays: 30 },
+    { year: '2023', month: 'December', basic: 48000, advance: 6000, deduction: 1500, overtime: 3000, leaves: 2, halfDays: 1, lateEntries: 2, totalDays: 31 },
+    { year: '2024', month: 'January', basic: 50000, advance: 5000, deduction: 2000, overtime: 3000, leaves: 2, halfDays: 1, lateEntries: 3, totalDays: 31 },
+    { year: '2024', month: 'February', basic: 50000, advance: 7000, deduction: 1000, overtime: 2000, leaves: 1, halfDays: 0, lateEntries: 2, totalDays: 28 },
+    { year: '2024', month: 'March', basic: 50000, advance: 0, deduction: 0, overtime: 5000, leaves: 0, halfDays: 0, lateEntries: 0, totalDays: 31 },
+    { year: '2024', month: 'April', basic: 50000, advance: 3000, deduction: 500, overtime: 1000, leaves: 2, halfDays: 1, lateEntries: 1, totalDays: 30 },
   ];
 
-  const currentData = salaryData.find(item => item.month === selectedMonth) || salaryData[0];
+  const years = [...new Set(salaryData.map(item => item.year))];
+  const months = [...new Set(salaryData
+    .filter(item => item.year === selectedYear)
+    .map(item => item.month)
+  )];
+
+  const currentData = salaryData.find(item => 
+    item.year === selectedYear && item.month === selectedMonth
+  ) || salaryData[0];
+
   const payableAmount = currentData.basic + currentData.overtime - currentData.advance - currentData.deduction;
   const balance = currentData.basic - currentData.advance;
 
   const pieData = [
-    { name: 'Basic', amount: currentData.basic, color: '#4CAF50' },
-    { name: 'Overtime', amount: currentData.overtime, color: '#8BC34A' },
-    { name: 'Advance', amount: currentData.advance, color: '#FF5252' },
-    { name: 'Deductions', amount: currentData.deduction, color: '#FF9800' },
+    { name: 'Basic', amount: currentData.basic, color: '#2A4D8E' },
+    { name: 'Overtime', amount: currentData.overtime, color: '#3AB795' },
+    { name: 'Advance', amount: currentData.advance, color: '#E74C3C' },
+    { name: 'Deductions', amount: currentData.deduction, color: '#F39C12' },
   ];
 
   const handleViewPayslip = () => {
-    Alert.alert('Payslip', `Download payslip for ${selectedMonth}?`, [
+    Alert.alert('Payslip', `Download payslip for ${selectedMonth} ${selectedYear}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Download', onPress: () => console.log('Download initiated') },
     ]);
@@ -35,18 +47,37 @@ const SalaryScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Month Selector */}
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedMonth}
-          onValueChange={setSelectedMonth}
-          mode="dropdown"
-          dropdownIconColor={Color.primary}
-        >
-          {salaryData.map((item) => (
-            <Picker.Item key={item.month} label={item.month} value={item.month} />
-          ))}
-        </Picker>
+      {/* Year/Month Selector */}
+      <View style={styles.pickerRow}>
+        <View style={[styles.pickerContainer, { flex: 1, marginRight: 10 }]}>
+          <Picker
+            selectedValue={selectedYear}
+            onValueChange={(value) => {
+              setSelectedYear(value);
+              const newMonths = salaryData
+                .filter(item => item.year === value)
+                .map(item => item.month);
+              setSelectedMonth(newMonths[0]);
+            }}
+            dropdownIconColor={Color.primary}
+          >
+            {years.map(year => (
+              <Picker.Item key={year} label={year} value={year} />
+            ))}
+          </Picker>
+        </View>
+
+        <View style={[styles.pickerContainer, { flex: 1 }]}>
+          <Picker
+            selectedValue={selectedMonth}
+            onValueChange={setSelectedMonth}
+            dropdownIconColor={Color.primary}
+          >
+            {months.map(month => (
+              <Picker.Item key={month} label={month} value={month} />
+            ))}
+          </Picker>
+        </View>
       </View>
 
       {/* Key Metrics */}
@@ -83,7 +114,6 @@ const SalaryScreen = () => {
             absolute
             hasLegend={false}
             center={[(Dimensions.get('window').width - 60) / 4, 0]}
-            style={styles.chart}
           />
         </View>
         <View style={styles.legendContainer}>
@@ -96,9 +126,8 @@ const SalaryScreen = () => {
         </View>
       </View>
 
-
-            {/* Attendance Details */}
-            <View style={styles.sectionContainer}>
+      {/* Attendance Details */}
+      <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Attendance Details</Text>
         <View style={styles.attendanceGrid}>
           <View style={styles.attendanceItem}>
@@ -123,29 +152,23 @@ const SalaryScreen = () => {
       {/* Salary Breakdown */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Salary Breakdown</Text>
-        
         <View style={styles.breakdownRow}>
           <Text style={styles.breakdownLabel}>Basic Salary</Text>
           <Text style={styles.breakdownValue}>₹{currentData.basic.toLocaleString()}</Text>
         </View>
-        
         <View style={styles.breakdownRow}>
           <Text style={styles.breakdownLabel}>Overtime (+)</Text>
-          <Text style={[styles.breakdownValue, { color: '#4CAF50' }]}>₹{currentData.overtime.toLocaleString()}</Text>
+          <Text style={[styles.breakdownValue, { color: '#3AB795' }]}>₹{currentData.overtime.toLocaleString()}</Text>
         </View>
-        
         <View style={styles.breakdownRow}>
           <Text style={styles.breakdownLabel}>Advance (-)</Text>
-          <Text style={[styles.breakdownValue, { color: '#FF5252' }]}>₹{currentData.advance.toLocaleString()}</Text>
+          <Text style={[styles.breakdownValue, { color: '#E74C3C' }]}>₹{currentData.advance.toLocaleString()}</Text>
         </View>
-        
         <View style={styles.breakdownRow}>
           <Text style={styles.breakdownLabel}>Deductions (-)</Text>
-          <Text style={[styles.breakdownValue, { color: '#FF9800' }]}>₹{currentData.deduction.toLocaleString()}</Text>
+          <Text style={[styles.breakdownValue, { color: '#F39C12' }]}>₹{currentData.deduction.toLocaleString()}</Text>
         </View>
       </View>
-
-
 
       {/* Payslip Button */}
       <TouchableOpacity style={styles.payslipButton} onPress={handleViewPayslip}>
@@ -165,10 +188,15 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  pickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 10,
+  },
   pickerContainer: {
     backgroundColor: 'white',
     borderRadius: 10,
-    marginBottom: 20,
     elevation: 2,
   },
   metricsContainer: {
@@ -176,7 +204,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
     gap: 15,
-   
   },
   metricCard: {
     flex: 1,
@@ -203,6 +230,11 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
   },
+  chartWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
   sectionContainer: {
     backgroundColor: 'white',
     borderRadius: 10,
@@ -221,21 +253,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     marginTop: 15,
-    gap: 15,
+    gap: 20,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   legendText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 14,
+    color: '#444',
+    fontWeight: '500',
   },
   breakdownRow: {
     flexDirection: 'row',
