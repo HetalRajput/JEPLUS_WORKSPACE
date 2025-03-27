@@ -9,11 +9,11 @@ const HomeScreen = ({navigation}) => {
         { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png'), status: 'active' },
         { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
         { id: 3, name: 'Sheyam', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 4, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 4, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
         { id: 5, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 6, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 6, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
         { id: 7, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 8, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
+        { id: 8, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
     ];
 
     return (
@@ -77,6 +77,7 @@ const HomeScreen = ({navigation}) => {
                 </View>
 
                 {/* Co-Workers */}
+                <Text style={styles.coworkertext}>Co-Workers</Text>
                 <View style={styles.coWorkersContainer}>
                     <FlatList
                         data={coworkers}
@@ -281,6 +282,14 @@ const styles = StyleSheet.create({
     },
     coWorkersContainer: {
         paddingHorizontal: 10,
+        
+    },
+    coworkertext:{
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        paddingHorizontal:15,
+        marginBottom:5
     },
     coWorker: {
         alignItems: 'center',

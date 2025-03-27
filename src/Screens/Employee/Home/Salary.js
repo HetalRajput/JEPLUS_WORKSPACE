@@ -31,12 +31,6 @@ const SalaryScreen = () => {
   const payableAmount = currentData.basic + currentData.overtime - currentData.advance - currentData.deduction;
   const balance = currentData.basic - currentData.advance;
 
-  const pieData = [
-    { name: 'Basic', amount: currentData.basic, color: '#2A4D8E' },
-    { name: 'Overtime', amount: currentData.overtime, color: '#3AB795' },
-    { name: 'Advance', amount: currentData.advance, color: '#E74C3C' },
-    { name: 'Deductions', amount: currentData.deduction, color: '#F39C12' },
-  ];
 
   const handleViewPayslip = () => {
     Alert.alert('Payslip', `Download payslip for ${selectedMonth} ${selectedYear}?`, [
@@ -95,36 +89,7 @@ const SalaryScreen = () => {
         </View>
       </View>
 
-      {/* Pie Chart */}
-      <View style={styles.chartContainer}>
-        <Text style={styles.sectionTitle}>Salary Distribution</Text>
-        <View style={styles.chartWrapper}>
-          <PieChart
-            data={pieData}
-            width={Dimensions.get('window').width - 60}
-            height={220}
-            chartConfig={{
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            }}
-            accessor="amount"
-            backgroundColor="transparent"
-            paddingLeft="0"
-            absolute
-            hasLegend={false}
-            center={[(Dimensions.get('window').width - 60) / 4, 0]}
-          />
-        </View>
-        <View style={styles.legendContainer}>
-          {pieData.map((item, index) => (
-            <View key={index} style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-              <Text style={styles.legendText}>{item.name}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
+
 
       {/* Attendance Details */}
       <View style={styles.sectionContainer}>

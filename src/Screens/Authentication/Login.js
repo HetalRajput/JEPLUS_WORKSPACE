@@ -1,60 +1,93 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Keyboard } from 'react-native';
-import { TextInput, Button } from 'react-native-paper'; // Import Button from react-native-paper
+import { View, Text, StyleSheet, TouchableOpacity, Image, Keyboard } from 'react-native';
+import { TextInput, Button, Snackbar } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
 import { Color } from '../../Constant/Constants';
 import { useAuth } from '../../Constant/Api/Authcontext';
 import NoInternetPopup from '../../Components/Other/Nointernetpopup';
 import LoginfailPopup from '../../Components/Other/Loginfail';
-import axios from 'axios';
 
-const PhoneNumberScreen = ({ navigation }) => {
+const OTPVerificationScreen = ({ navigation }) => {
   const [jePlusId, setJePlusId] = useState('');
-  const [password, setPassword] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
-  const { saveAuthData } = useAuth(); // Use saveAuthData from AuthContext
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const { saveAuthData } = useAuth();
 
-  const handleContinue = async () => {
+  // Function to show snackbar
+  const showSnackbar = (message) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  // Function to send OTP
+  const handleSendOtp = async () => {
     Keyboard.dismiss();
     const trimmedId = jePlusId.trim();
-    const trimmedPassword = password.trim();
 
     if (!trimmedId) {
-      alert('Please enter your JE Plus ID.');
-      return;
-    }
-    if (!trimmedPassword) {
-      alert('Please enter your password.');
+      showSnackbar('Please enter your JE Plus ID.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await axios.post('http://jemapps.in/api/auth/hybrid-login', {
-        username: trimmedId,
-        password: trimmedPassword,
+      const response = await axios.post('http://jemapps.in/api/auth/send-otp', {
+        code: trimmedId,  // Send JE Plus ID
       });
-       console.log("This is login data",response.data);
-       
-      if (response?.status === 200 && response?.data) {
-        const { token, role=[]} = response.data;
 
-        
-      
-        // Save authentication data to AuthContext
-        await saveAuthData(token, role);
-
-   
-       
+      if (response.status === 200) {
+        showSnackbar('OTP sent successfully.');
+        setIsOtpSent(true);
       } else {
-        throw new Error('Invalid credentials or unexpected response structure.');
+        throw new Error('Failed to send OTP.');
       }
-    } catch (err) {
-      console.error('Login error:', err.message);
-      setShowErrorPopup(true); // Show error popup on failure
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      setShowErrorPopup(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to verify OTP
+  const handleVerifyOtp = async () => {
+    Keyboard.dismiss();
+    const trimmedId = jePlusId.trim();
+    const trimmedOtp = otp.trim();
+
+    if (!trimmedOtp) {
+      showSnackbar('Please enter the OTP.');
+      return;
+    }
+
+    setLoading(true);
+    console.log(trimmedId, trimmedOtp);
+
+    try {
+      const response = await axios.post('http://jemapps.in/api/auth/verify-otp', {
+        code: trimmedId,    // Send JE Plus ID
+        otp: trimmedOtp,
+      });
+      console.log(response.data);
+
+      if (response.status === 200 && response.data) {
+        const { token, role = [] } = response.data;
+
+        // Save auth data to context
+        await saveAuthData(token, role);
+        showSnackbar('OTP verified successfully.');
+      } else {
+        throw new Error('Invalid OTP or unexpected response structure.');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      setShowErrorPopup(true);
     } finally {
       setLoading(false);
     }
@@ -63,6 +96,7 @@ const PhoneNumberScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <NoInternetPopup />
+
       <View style={styles.logoContainer}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color="#333" />
@@ -70,56 +104,76 @@ const PhoneNumberScreen = ({ navigation }) => {
         <Image source={require('../../Assets/Image/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
 
-      <Text style={styles.title}>Welcome back!</Text>
-      <Text style={styles.subtitle}>Glad to see you again!</Text>
+      <Text style={styles.title}>OTP Verification</Text>
+      <Text style={styles.subtitle}>Enter your JE Plus ID to receive an OTP</Text>
 
       <View style={styles.inputContainer}>
         <TextInput
-          label="JEPLUS ID"
+          label="JE PLUS ID"
           mode="outlined"
           value={jePlusId}
           onChangeText={setJePlusId}
           style={styles.textInput}
           outlineStyle={{ borderRadius: 8, borderColor: '#1568ab' }}
           theme={{ colors: { text: '#1568ab', placeholder: '#a1a1a1', primary: '#1568ab' } }}
+          disabled={isOtpSent}
         />
       </View>
 
-      <TextInput
-        label="PASSWORD"
-        mode="outlined"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry={!isPasswordVisible}
-        style={styles.textInput}
-        outlineStyle={{ borderRadius: 8, borderColor: '#1568ab' }}
-        theme={{ colors: { text: '#1568ab', placeholder: '#a1a1a1', primary: '#1568ab' } }}
-        right={
-          <TextInput.Icon
-            icon={isPasswordVisible ? 'eye-off' : 'eye'}
-            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-          />
-        }
-      />
+      {isOtpSent && (
+        <TextInput
+          label="Enter OTP"
+          mode="outlined"
+          value={otp}
+          onChangeText={setOtp}
+          style={styles.textInput}
+          keyboardType="numeric"
+          outlineStyle={{ borderRadius: 8, borderColor: '#1568ab' }}
+          theme={{ colors: { text: '#1568ab', placeholder: '#a1a1a1', primary: '#1568ab' } }}
+        />
+      )}
 
       <View style={styles.footer}>
-        <Button
-          mode="contained"
-          onPress={handleContinue}
-          loading={loading} // Show loading indicator
-          disabled={loading} // Disable button when loading
-          style={styles.button}
-          labelStyle={styles.buttonLabel}
-        >
-          Continue
-        </Button>
+        {!isOtpSent ? (
+          <Button
+            mode="contained"
+            onPress={handleSendOtp}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+            labelStyle={styles.buttonLabel}
+          >
+            Send OTP
+          </Button>
+        ) : (
+          <Button
+            mode="contained"
+            onPress={handleVerifyOtp}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+            labelStyle={styles.buttonLabel}
+          >
+            Verify OTP
+          </Button>
+        )}
       </View>
 
       <LoginfailPopup
         visible={showErrorPopup}
-        message="Login failed. Please check your credentials and try again."
+        message="Failed to verify OTP. Please try again."
         onClose={() => setShowErrorPopup(false)}
       />
+
+      {/* Snackbar for better feedback */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 };
@@ -169,7 +223,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '90%',
-    backgroundColor: Color.primedarkblue, // Use your primary color
+    backgroundColor: Color.primedarkblue,
     borderRadius: 30,
     paddingVertical: 4,
   },
@@ -178,6 +232,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  snackbar: {
+    backgroundColor: '#1568ab',
+  },
 });
 
-export default PhoneNumberScreen;
+export default OTPVerificationScreen;
