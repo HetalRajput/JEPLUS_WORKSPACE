@@ -22,7 +22,7 @@ const HomeScreen = ({navigation}) => {
             <LinearGradient colors={['#007bff', '#0056b3']} style={styles.header}>
                 <Image source={require('../../../Assets/Image/profile.png')} style={styles.profileImg} />
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.name}>Bittu Kumar</Text>
+                    <Text style={styles.name}>Welocme User !</Text>
                     <Text style={styles.role}>Supplyman • JE020</Text>
                 </View>
                 <View style={styles.status}>

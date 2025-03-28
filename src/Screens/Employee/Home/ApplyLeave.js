@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Button } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Color } from '../../../Constant/Constants';
 
 const LeaveFormScreen = () => {
@@ -11,6 +11,26 @@ const LeaveFormScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      
+      {/* Leave Count Section */}
+      <View style={styles.leaveCountContainer}>
+        <View style={styles.leaveCard}>
+          <Text style={styles.leaveTitle}>EL</Text>
+          <Text style={styles.leaveCount}>12</Text>
+          <Text style={styles.leaveLabel}>Earned Leave</Text>
+        </View>
+        <View style={styles.leaveCard}>
+          <Text style={styles.leaveTitle}>CL</Text>
+          <Text style={styles.leaveCount}>8</Text>
+          <Text style={styles.leaveLabel}>Casual Leave</Text>
+        </View>
+        <View style={styles.leaveCard}>
+          <Text style={styles.leaveTitle}>ML</Text>
+          <Text style={styles.leaveCount}>5</Text>
+          <Text style={styles.leaveLabel}>Medical Leave</Text>
+        </View>
+      </View>
+
       <Text style={styles.header}>Leave Application Form</Text>
       <Text style={styles.subHeader}>Please provide information about your leave.</Text>
 
@@ -80,6 +100,7 @@ const LeaveFormScreen = () => {
       <TouchableOpacity style={styles.button} onPress={handleApplyLeave}>
         <Text style={styles.buttonText}>Submit</Text>
       </TouchableOpacity>
+      
     </ScrollView>
   );
 };
@@ -91,6 +112,37 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fff',
     flexGrow: 1,
+  },
+  leaveCountContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  leaveCard: {
+    flex: 1,
+    backgroundColor: "white", 
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: Color.primeBlue,
+ 
+  },
+  leaveTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Color.primary,
+  },
+  leaveCount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginVertical: 5,
+  },
+  leaveLabel: {
+    fontSize: 12,
+    color: '#555',
   },
   header: {
     fontSize: 22,

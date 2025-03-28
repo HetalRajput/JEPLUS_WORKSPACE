@@ -3,47 +3,59 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Calendar } from 'react-native-calendars';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-// Custom Color Palette
 const colors = {
-  primary: '#6C63FF',      // Vibrant Purple
-  secondary: '#FF6584',    // Pinkish Red
-  success: '#4CAF50',      // Green
-  warning: '#FF9800',      // Orange
-  background: '#F8F9FA',   // Light Gray
-  textPrimary: '#2D3436',  // Dark Gray
-  textSecondary: '#636E72',// Medium Gray
-  lightPurple: '#E6E6FF',  // Light Purple
-  lightGreen: '#E8F5E9',   // Light Green
-  lightRed: '#FFEBEE',     // Light Red
-  lightOrange: '#FFF3E0'   // Light Orange
+  primary: '#6C63FF',
+  secondary: '#FF6584',
+  success: '#4CAF50',
+  warning: '#FF9800',
+  background: '#F8F9FA',
+  textPrimary: '#2D3436',
+  textSecondary: '#636E72',
+  lightPurple: '#E6E6FF',
+  lightGreen: '#E8F5E9',
+  lightRed: '#FFEBEE',
+  lightOrange: '#FFF3E0'
 };
 
 const AttendanceScreen = () => {
-  const [selectedDate, setSelectedDate] = useState('2025-03-25');
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   
-  const markedDates = {
-    '2025-03-01': { marked: true, dotColor: colors.success, type: 'present' },
-    '2025-03-02': { marked: true, dotColor: colors.secondary, type: 'absent' },
-    '2025-03-05': { marked: true, dotColor: colors.success, type: 'present' },
-    '2025-03-10': { marked: true, dotColor: colors.secondary, type: 'absent' },
-    '2025-03-15': { marked: true, dotColor: colors.success, type: 'present' },
-    [selectedDate]: { 
-      selected: true, 
-      selectedColor: colors.primary,
-      customStyles: {
-        container: {
-          borderRadius: 12,
-          elevation: 3,
-        },
-        text: {
-          color: 'white',
-          fontWeight: 'bold'
-        }
-      }
-    },
+  const attendanceRecords = {
+    '2025-03-01': { checkIn: '08:30 AM', checkOut: '05:15 PM', status: 'present' },
+    '2025-03-02': { checkIn: '08:30 AM', checkOut: '05:15 PM', status: 'present' },
+    '2025-03-03': { checkIn: '08:30 AM', checkOut: '05:15 PM', status: 'present' },
+    '2025-03-04': { checkIn: '08:30 AM', checkOut: '05:15 PM', status: 'present' },
+    '2025-03-05': { checkIn: '09:00 AM', checkOut: '05:00 PM', status: 'present' },
+    '2025-03-15': { checkIn: '08:45 AM', checkOut: '05:30 PM', status: 'present' },
+    '2025-03-25': { checkIn: '09:00 AM', checkOut: '05:00 PM', status: 'present' },
+    '2025-03-02': { status: 'absent' },
+    '2025-03-09': { status: 'absent' },
   };
 
-  // Calculate attendance statistics
+  const markedDates = Object.keys(attendanceRecords).reduce((acc, date) => {
+    acc[date] = {
+      marked: true,
+      dotColor: attendanceRecords[date].status === 'present' ? colors.success : colors.secondary,
+      type: attendanceRecords[date].status
+    };
+    return acc;
+  }, {});
+
+  // Add selected date styling (this will override today's styling if selected)
+  markedDates[selectedDate] = {
+    ...markedDates[selectedDate],
+    selected: true,
+    selectedColor: colors.primary,
+    customStyles: {
+      container: { borderRadius: 12, elevation: 3 },
+      text: { color: 'white', fontWeight: 'bold' }
+    }
+  };
+
+
   const attendanceData = {
     present: 20,
     absent: 5,
@@ -58,11 +70,52 @@ const AttendanceScreen = () => {
     </View>
   );
 
+  const renderDateDetails = () => {
+    const record = attendanceRecords[selectedDate];
+    
+    return (
+      <View style={styles.detailContainer}>
+        <Text style={[styles.detailTitle, { color: colors.primary }]}>
+          {new Date(selectedDate).toDateString()}
+        </Text>
+
+        {record ? (
+          record.status === 'present' ? (
+            <View style={styles.timeDetails}>
+              <View style={styles.timeRow}>
+                <Icon name="clock-start" size={24} color={colors.success} />
+                <View style={styles.timeTextContainer}>
+                  <Text style={styles.timeLabel}>Check-in</Text>
+                  <Text style={styles.timeValue}>{record.checkIn}</Text>
+                </View>
+              </View>
+              <View style={styles.timeRow}>
+                <Icon name="clock-end" size={24} color={colors.secondary} />
+                <View style={styles.timeTextContainer}>
+                  <Text style={styles.timeLabel}>Check-out</Text>
+                  <Text style={styles.timeValue}>{record.checkOut}</Text>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.absentContainer}>
+              <Icon name="close-circle" size={40} color={colors.secondary} />
+              <Text style={styles.absentText}>Absent</Text>
+            </View>
+          )
+        ) : (
+          <View style={styles.noDataContainer}>
+            <Icon name="calendar-remove" size={40} color={colors.textSecondary} />
+            <Text style={styles.noDataText}>No attendance records available</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-
-      <Calendar
+    <ScrollView style={styles.container}>
+ <Calendar
         current={selectedDate}
         markingType={'custom'}
         markedDates={markedDates}
@@ -70,7 +123,8 @@ const AttendanceScreen = () => {
         theme={{
           calendarBackground: colors.background,
           dayTextColor: colors.textPrimary,
-          todayTextColor: colors.warning,
+          todayTextColor: 'white', // White text for today
+          todayBackgroundColor: colors.primary, // Purple background for today
           selectedDayBackgroundColor: colors.primary,
           selectedDayTextColor: 'white',
           arrowColor: colors.primary,
@@ -80,15 +134,6 @@ const AttendanceScreen = () => {
           textMonthFontWeight: 'bold',
           textDayHeaderFontSize: 14,
           textDayHeaderFontWeight: '600',
-          'stylesheet.calendar.header': {
-            header: {
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingHorizontal: 20,
-              marginBottom: 10,
-            }
-          }
         }}
         renderArrow={(direction) => (
           <Icon 
@@ -99,16 +144,15 @@ const AttendanceScreen = () => {
         )}
       />
 
-      {/* Legend */}
       <View style={styles.legendContainer}>
         {getLegendItem(colors.success, 'Present', 'check-circle')}
         {getLegendItem(colors.secondary, 'Absent', 'close-circle')}
         {getLegendItem(colors.warning, 'Today', 'calendar-star')}
       </View>
 
+      {renderDateDetails()}
 
-      {/* Detailed Summary */}
-      <View style={styles.detailContainer}>
+      <View style={styles.detailContainer1}>
         <Text style={[styles.detailTitle, { color: colors.primary }]}>Monthly Overview</Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { 
@@ -117,15 +161,15 @@ const AttendanceScreen = () => {
           }]} />
         </View>
         <View style={styles.statsContainer}>
-          <Text style={[styles.statsText, { color: colors.textSecondary }]}>
+          <Text style={styles.statsText}>
             Attendance Rate: {(attendanceData.present/attendanceData.total*100).toFixed(1)}%
           </Text>
-          <Text style={[styles.statsText, { color: colors.textSecondary }]}>
+          <Text style={styles.statsText}>
             Working Days Remaining: {attendanceData.total - attendanceData.present - attendanceData.absent}
           </Text>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -133,30 +177,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    padding: 20,
-    backgroundColor: colors.primary,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    marginBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
+    paddingTop: 20,
+    
   },
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 24,
-    marginVertical: 16,
-    paddingHorizontal: 20,
+   justifyContent:"space-between",
+    marginVertical: 5,
+    paddingHorizontal: 15,
   },
   legendItem: {
     alignItems: 'center',
@@ -170,46 +199,68 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  summaryCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: colors.textPrimary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginVertical: 8,
-  },
-  summaryTitle: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: '500',
-  },
   detailContainer: {
     margin: 10,
     padding: 20,
     borderRadius: 16,
     backgroundColor: 'white',
     elevation: 2,
+   
+  },
+  detailContainer1: {
+    marginHorizontal: 10,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: 'white',
+    elevation: 2,
+    marginBottom: 30,
+   
   },
   detailTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
+  },
+  timeDetails: {
+    marginTop: 8,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  timeTextContainer: {
+    marginLeft: 16,
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  timeValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  absentContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  absentText: {
+    fontSize: 18,
+    color: colors.secondary,
+    marginTop: 8,
+    fontWeight: 'bold',
   },
   progressBar: {
     height: 12,
@@ -226,6 +277,7 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: 14,
+    color: colors.textSecondary,
     marginVertical: 4,
   },
 });

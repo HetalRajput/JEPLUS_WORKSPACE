@@ -18,7 +18,8 @@ const ViewInvoicesScreen = ({ route }) => {
   useEffect(() => {
     if (route?.params) {
       const { acno: paramAcno, routes: paramRoutes } = route.params;
-
+  
+   
       if (paramAcno && paramRoutes) {
         setAcno(paramAcno);
         setRoutes(paramRoutes);

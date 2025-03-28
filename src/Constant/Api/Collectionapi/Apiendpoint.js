@@ -532,7 +532,6 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
       });
-      console.log(">>>>>>>>>>>",response.data);
       
   
       return {
@@ -578,6 +577,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   };
 
   export const GetOsInvoices = async (acno, routes) => {
+  
     const token = await getToken(); // Get token from AsyncStorage
   
   
@@ -587,7 +587,7 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
           Authorization: `Bearer ${token}`, // Add Bearer token to request headers
         }
       });
-      console.log(">>>>>>>>>>>",response.data);
+      console.log("This is the os data >>>>>>>>>>>",response.data);
       
   
       return {

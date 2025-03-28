@@ -14,7 +14,7 @@ import {
 import Icon from "react-native-vector-icons/Ionicons";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
-import { GetcollectionCustomer, SearchCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
+import { GetcollectionCustomer } from "../../../Constant/Api/Collectionapi/Apiendpoint";
 import { Color } from "../../../Constant/Constants";
 import MarkAsVisitPopup from "../../../Components/Collection/Markasvisit";
 
@@ -56,46 +56,49 @@ const CollectionScreen = ({ navigation }) => {
     }
   };
 
-  const handleSearch = async (query) => {
-    if (query.trim() === "") {
-      fetchCollectionInvoice(startDate, endDate);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await SearchCustomer(query);
-      setCollectionInvoice(response.data);
-    } catch (error) {
-      console.error("Error searching customer:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (search === "") {
-      fetchCollectionInvoice(startDate, endDate);
-    }
-  }, [startDate, endDate, search]);
-
   useFocusEffect(
     useCallback(() => {
-      if (search === "") {
-        fetchCollectionInvoice(startDate, endDate);
+      fetchCollectionInvoice(startDate, endDate);
+    }, [startDate, endDate])
+  );
+
+  const getFilteredAndSortedInvoices = () => {
+    if (!search) {
+      return collectionInvoice.sort((a, b) => {
+        if (a.status === "Pending" && b.status === "Completed") return -1;
+        if (a.status === "Completed" && b.status === "Pending") return 1;
+        return 0;
+      });
+    }
+
+    const searchTerm = search.toLowerCase();
+    const matchedItems = [];
+    const otherItems = [];
+
+    collectionInvoice.forEach(item => {
+      if (item.name.toLowerCase().includes(searchTerm)) {
+        matchedItems.push(item);
+      } else {
+        otherItems.push(item);
       }
-    }, [startDate, endDate, search])
-  );
+    });
 
-  const sortedInvoices = collectionInvoice.sort((a, b) => {
-    if (a.status === "Pending" && b.status === "Completed") return -1;
-    if (a.status === "Completed" && b.status === "Pending") return 1;
-    return 0;
-  });
+    // Sort matched items by status (Pending first)
+    matchedItems.sort((a, b) => {
+      if (a.status === "Pending" && b.status === "Completed") return -1;
+      if (a.status === "Completed" && b.status === "Pending") return 1;
+      return 0;
+    });
 
-  const filteredInvoices = sortedInvoices.filter((invoice) =>
-    invoice.name.toLowerCase().includes(search.toLowerCase())
-  );
+    // Sort other items by status (Pending first)
+    otherItems.sort((a, b) => {
+      if (a.status === "Pending" && b.status === "Completed") return -1;
+      if (a.status === "Completed" && b.status === "Pending") return 1;
+      return 0;
+    });
+
+    return [...matchedItems, ...otherItems];
+  };
 
   const handleCardPress = (item) => {
     if (item.IsVisited === "true") {
@@ -179,7 +182,7 @@ const CollectionScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setSearch(""); // Reset the search query on refresh
+    setSearch("");
     await fetchCollectionInvoice(startDate, endDate);
     setRefreshing(false);
   };
@@ -191,10 +194,7 @@ const CollectionScreen = ({ navigation }) => {
         placeholder="Search Customer"
         placeholderTextColor="#888"
         value={search}
-        onChangeText={(text) => {
-          setSearch(text);
-          handleSearch(text); // Trigger search API call
-        }}
+        onChangeText={setSearch}
       />
       <View style={styles.datePickerContainer}>
         <TouchableOpacity style={styles.datePickerButton} onPress={() => setShowStartDatePicker(true)}>
@@ -230,7 +230,7 @@ const CollectionScreen = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
-          data={search ? filteredInvoices : collectionInvoice}
+          data={getFilteredAndSortedInvoices()}
           keyExtractor={(item) => item.acno}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
