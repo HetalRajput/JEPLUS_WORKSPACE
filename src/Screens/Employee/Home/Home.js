@@ -1,10 +1,59 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+    View, 
+    Text, 
+    Image, 
+    TouchableOpacity, 
+    FlatList, 
+    StyleSheet, 
+    ActivityIndicator,
+    RefreshControl 
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Color } from '../../../Constant/Constants';
+import { Employeecheakinout } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({ navigation }) => {
+    // State management
+    const [employeeData, setEmployeeData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    // Fetch data function
+    const fetchEmployeeData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await Employeecheakinout();
+            
+            if (response.data) {
+                setEmployeeData(response.data);
+            } else {
+                setError('No data received from server');
+            }
+        } catch (err) {
+            console.error('Error fetching data:', err);
+            setError(err.message || 'Failed to fetch data');
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    // Initial data fetch
+    useEffect(() => {
+        fetchEmployeeData();
+    }, []);
+
+    // Pull-to-refresh handler
+    const handleRefresh = () => {
+        setRefreshing(true);
+        fetchEmployeeData();
+    };
+
+    // Mock data for coworkers (should ideally come from API)
     const coworkers = [
         { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png'), status: 'active' },
         { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
@@ -16,13 +65,59 @@ const HomeScreen = ({navigation}) => {
         { id: 8, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
     ];
 
+    // Format time display
+    const formatTime = (time) => {
+        if (!time) return '--:--';
+        // Add any time formatting logic here if needed
+        return time;
+    };
+
+    // Render helper for check-in/check-out section
+    const renderCheckInOut = () => {
+        if (loading) {
+            return <ActivityIndicator size="large" color="#007bff" />;
+        }
+        
+        if (error) {
+            return (
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity onPress={fetchEmployeeData}>
+                        <Text style={styles.retryText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (!employeeData || employeeData.length === 0) {
+            return <Text style={styles.noDataText}>No check-in/check-out data available</Text>;
+        }
+
+        // Assuming API returns an array of check-in/out records
+        // Display only the most recent record
+        const latestRecord = employeeData[0];
+        
+        return (
+            <View style={styles.checkBoxContainer}>
+                <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkInBox]}>
+                    <Text style={styles.checkTime}>{formatTime(latestRecord.TimeIn)}</Text>
+                    <Text style={styles.checkLabel}>Check In</Text>
+                </LinearGradient>
+                <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkOutBox]}>
+                    <Text style={styles.checkTime}>{formatTime(latestRecord.TimeOut)}</Text>
+                    <Text style={styles.checkLabel}>Check Out</Text>
+                </LinearGradient>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* Header */}
             <LinearGradient colors={['#007bff', '#0056b3']} style={styles.header}>
                 <Image source={require('../../../Assets/Image/profile.png')} style={styles.profileImg} />
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.name}>Welocme User !</Text>
+                    <Text style={styles.name}>Welcome User!</Text>
                     <Text style={styles.role}>Supplyman • JE020</Text>
                 </View>
                 <View style={styles.status}>
@@ -50,18 +145,20 @@ const HomeScreen = ({navigation}) => {
             </View>
 
             {/* Check-In & Check-Out */}
-            <View style={styles.checkContainer}>
-                <Text style={styles.dateText}>12 March 2025</Text>
-                <View style={styles.checkBoxContainer}>
-                    <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkInBox]}>
-                        <Text style={styles.checkTime}>08:00 AM</Text>
-                        <Text style={styles.checkLabel}>Check In</Text>
-                    </LinearGradient>
-                    <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkOutBox]}>
-                        <Text style={styles.checkTime}>05:00 PM</Text>
-                        <Text style={styles.checkLabel}>Check Out</Text>
-                    </LinearGradient>
-                </View>
+            <View style={styles.checkContainer} 
+                refreshControl={
+                    <RefreshControl 
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#007bff']}
+                    />
+                }>
+                <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })}</Text>
+                {renderCheckInOut()}
             </View>
 
             {/* Content Wrapper */}
@@ -69,10 +166,30 @@ const HomeScreen = ({navigation}) => {
                 {/* Actions */}
                 <View style={styles.actionsContainer}>
                     <View style={styles.actionRow}>
-                        <ActionButton icon="calendar" label="Leave" onpress="View Leave" navigation={navigation}/>
-                        <ActionButton icon="cash-outline" label="Salary"  onpress="Salary" navigation={navigation}/>
-                        <ActionButton icon="time-outline" label="Overtime" onpress="Overtime" navigation={navigation}/>
-                        <ActionButton icon="clipboard" label="Attendance"  onpress="Attendance" navigation={navigation} />
+                        <ActionButton 
+                            icon="calendar" 
+                            label="Leave" 
+                            onpress="View Leave" 
+                            navigation={navigation}
+                        />
+                        <ActionButton 
+                            icon="cash-outline" 
+                            label="Salary"  
+                            onpress="Salary" 
+                            navigation={navigation}
+                        />
+                        <ActionButton 
+                            icon="time-outline" 
+                            label="Overtime" 
+                            onpress="Overtime" 
+                            navigation={navigation}
+                        />
+                        <ActionButton 
+                            icon="clipboard" 
+                            label="Attendance"  
+                            onpress="Attendance" 
+                            navigation={navigation} 
+                        />
                     </View>
                 </View>
 
@@ -89,7 +206,9 @@ const HomeScreen = ({navigation}) => {
                                     <Image source={item.image} style={styles.coWorkerImg} />
                                     <View style={[
                                         styles.statusIndicator,
-                                        item.status === 'active' ? styles.activeIndicator : styles.inactiveIndicator
+                                        item.status === 'active' 
+                                            ? styles.activeIndicator 
+                                            : styles.inactiveIndicator
                                     ]} />
                                 </View>
                                 <Text style={styles.coWorkerName}>{item.name}</Text>
@@ -104,8 +223,11 @@ const HomeScreen = ({navigation}) => {
 };
 
 // Action Button Component
-const ActionButton = ({ icon, label , onpress ,navigation   }) => (
-    <TouchableOpacity style={styles.actionButton} onPress={()=>navigation.navigate(onpress)}>
+const ActionButton = ({ icon, label, onpress, navigation }) => (
+    <TouchableOpacity 
+        style={styles.actionButton} 
+        onPress={() => navigation.navigate(onpress)}
+    >
         <View style={styles.actionIconContainer}>
             <Icon name={icon} size={24} color="#007bff" />
         </View>

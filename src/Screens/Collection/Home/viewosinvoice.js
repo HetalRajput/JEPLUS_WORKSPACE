@@ -37,14 +37,12 @@ const ViewInvoicesScreen = ({ route }) => {
     setLoading(true);
     try {
       const response = await GetOsInvoices(acnoValue, routesValue);
-      console.log('API Response:', response);
-
       if (response?.data && response.data.length > 0) {
         const formattedData = response.data.map((item) => ({
           id: `${item.Vno || acno}`,
           invoiceNo: item.Vno || 'N/A',
           date: item.vdt ? new Date(item.vdt).toLocaleDateString() : 'N/A',
-          dueDate: item.DueDate ? new Date(item.DueDate).toLocaleDateString() : 'N/A',
+          dueDate: item.duedate ? new Date(item.duedate).toLocaleDateString() : 'N/A',
           amount: item.Osamt || 0,
           days: item.days !== null ? item.days : 'N/A',
         }));

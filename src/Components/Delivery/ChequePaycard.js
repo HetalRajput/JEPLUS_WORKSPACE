@@ -54,7 +54,7 @@ export const ChequePayCard = ({ item, navigation }) => {
       formData.append("SMan", item.sman);
       formData.append("VAmount", item.amount);
       formData.append("PaidAmount", amount);
-      formData.append("PayMethod", "Cash");
+      formData.append("PayMethod", "Cheque");
       formData.append("DelStatus", "Delivered");
       formData.append("remarks", selectedReason || "All Payment collected successfully");
       formData.append("Lat", location.latitude || "0.0");
