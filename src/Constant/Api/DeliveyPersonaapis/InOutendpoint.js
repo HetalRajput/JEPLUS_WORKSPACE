@@ -16,6 +16,10 @@ const getToken = async () => {
 };
 
 export const PunchInOut = async (formData) => {
+  console.log(formData);
+  
+  console.log(formData, "formData in InOutendpoint.js")
+  
   try {
     const token = await getToken(); // Get token from AsyncStorage
 
@@ -29,7 +33,8 @@ export const PunchInOut = async (formData) => {
         "Content-Type": "multipart/form-data", // Required for FormData
       },
     });
-
+ 
+        
     return {
       success: true,
       data: response.data,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,10 @@ import {
   RefreshControl,
   ScrollView,
   Dimensions,
-
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { launchCamera } from 'react-native-image-picker';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
 import { getUserInfo } from '../../../Constant/Api/DeliveyPersonaapis/Homeendpoint';
@@ -39,7 +38,9 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
- 
+  const [showCamera, setShowCamera] = useState(false);
+  const cameraRef = useRef(null);
+  const device = useCameraDevice('back');
 
   // Load isOnline state from AsyncStorage
   useEffect(() => {
@@ -50,10 +51,21 @@ const DashboardScreen = ({ navigation }) => {
           setIsOnline(JSON.parse(storedState));
         }
       } catch (err) {
-      
+        console.error('Error loading online state:', err);
       }
     };
     loadState();
+  }, []);
+
+  // Check camera permission when component mounts
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      const cameraPermission = await Camera.getCameraPermissionStatus();
+      if (cameraPermission !== 'granted') {
+        await Camera.requestCameraPermission();
+      }
+    };
+    checkCameraPermission();
   }, []);
 
   // Fetch user data and summary
@@ -80,7 +92,7 @@ const DashboardScreen = ({ navigation }) => {
         setDistance(calculatedDistance);
       } catch (locationError) {
         console.warn('Location access denied or error occurred', locationError);
-        setDistance('Location access denied'); // Show a message or default value
+        setDistance('Location access denied');
       }
     } catch (err) {
       setError('Failed to fetch data');
@@ -94,36 +106,6 @@ const DashboardScreen = ({ navigation }) => {
     await fetchData();
     setRefreshing(false);
   };
-  
-
-  // Request camera permission
-  const requestCameraPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: 'Camera Permission',
-            message: 'This app needs access to your camera to take pictures.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          return true;
-        } else {
-          Alert.alert('Camera permission denied');
-          return false;
-        }
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
-    } else {
-      return true; // iOS handles permissions differently, usually via Info.plist
-    }
-  };
 
   // Handle Punch In/Out
   const handlePunchInOut = async () => {
@@ -133,45 +115,66 @@ const DashboardScreen = ({ navigation }) => {
       return;
     }
 
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      return;
-    }
-
-    launchCamera({ mediaType: 'photo', quality: 1 }, async (response) => {
-      if (response.didCancel || response.error) {
-        Alert.alert('Error', 'Failed to capture photo.');
+    // Check camera permission
+    const cameraPermission = await Camera.getCameraPermissionStatus();
+    if (cameraPermission !== 'granted') {
+      const newPermission = await Camera.requestCameraPermission();
+      if (newPermission !== 'granted') {
+        Alert.alert('Error', 'Camera permission is required to punch in/out');
         return;
       }
+    }
 
-      const photo = response.assets[0].uri;
-      setLoading(true);
+    // Show camera view
+    setShowCamera(true);
+  };
 
-      try {
-        const formData = new FormData();
-        formData.append('status', isOnline ? 'out' : 'in');
-        formData.append('image', {
-          uri: photo,
-          type: 'image/jpeg',
-          name: 'punch.jpg',
+  const takePhoto = async () => {
+    try {
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePhoto({
+          qualityPrioritization: 'quality',
+          flash: 'off',
+          enableShutterSound: false,
         });
 
-        const punchResponse = await PunchInOut(formData);
-        if (punchResponse.success) {
-          const newStatus = !isOnline;
-          setIsOnline(newStatus);
-          await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
-          Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
-        } else {
-          Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
+        setShowCamera(false);
+        setLoading(true);
+
+        try {
+          const formData = new FormData();
+          formData.append('status', isOnline ? 'out' : 'in');
+          formData.append('image', {
+            uri: 'file://' + photo.path,
+            type: 'image/jpeg',
+            name: 'punch.jpg',
+          });
+
+          const punchResponse = await PunchInOut(formData);
+          if (punchResponse.success) {
+            const newStatus = !isOnline;
+            setIsOnline(newStatus);
+            await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
+            Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
+          } else {
+            Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
+          }
+        } catch (err) {
+          console.error('Error:', err);
+          Alert.alert('Error', 'An error occurred while processing your request.');
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('Error:', err);
-        Alert.alert('Error', 'An error occurred while processing your request.');
-      } finally {
-        setLoading(false);
       }
-    });
+    } catch (err) {
+      console.error('Failed to take photo:', err);
+      Alert.alert('Error', 'Failed to capture photo');
+      setShowCamera(false);
+    }
+  };
+
+  const cancelCamera = () => {
+    setShowCamera(false);
   };
 
   const renderStatCard = (icon, value, label, amount, total = null) => {
@@ -193,7 +196,27 @@ const DashboardScreen = ({ navigation }) => {
     );
   };
 
-
+  if (showCamera && device) {
+    return (
+      <View style={StyleSheet.absoluteFill}>
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={true}
+          photo={true}
+        />
+        <View style={styles.cameraControls}>
+          <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
+            <View style={styles.captureButton} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={cancelCamera}>
+            <Icon name="close" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -298,26 +321,17 @@ const DashboardScreen = ({ navigation }) => {
               summaryData.monthly?.delivered || 0,
               'Monthly Order',
               summaryData.monthly?.totalAmt || 0,
-
             )}
           </View>
-
 
           <View style={{ marginTop: 20 }}>
             <SliderBox />
           </View>
         </View>
-
-
-
       </View>
     </ScrollView>
   );
 };
-
-
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -417,9 +431,33 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: 'red',
   },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 40,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  cameraButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 5,
+    borderColor: 'white',
+    backgroundColor: 'transparent',
+  },
+  cancelButton: {
+    position: 'absolute',
+    right: 30,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 5,
+  },
 });
-
-
-
 
 export default DashboardScreen;

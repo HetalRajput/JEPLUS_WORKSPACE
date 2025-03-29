@@ -12,9 +12,6 @@ import DeliveryHelpAndSupportScreen from '../../Screens/Delivery/Profile/Help&Su
 import DeliveryFeedbackScreen from '../../Screens/Delivery/Profile/Feedback';
 import DeliveryPrivacyPolicyScreen from '../../Screens/Delivery/Profile/PrivacyPolicy';
 import DeliveryProfileInfoScreen from '../../Screens/Delivery/Profile/Profileinformation';
-
-
-
 import MapScreen from '../../Screens/Delivery/Map/Map';
 import TagCardScreen from '../../Screens/Delivery/Map/Tagscreen';
 import InvoiceScreen from '../../Screens/Delivery/Map/InvoiceScreen';
