@@ -38,7 +38,7 @@ const HomeStack = () => (
     <Stack.Screen name="Complains" component={ComplainScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Outstanding" component={ OutstandingScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Invoice" component={ ViewInvoicesScreen} options={{ headerShown: true }} />
-
+    <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: true }}/>
     
   </Stack.Navigator>
 );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { launchCamera } from 'react-native-image-picker';
+import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
 import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
@@ -43,6 +43,9 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const device = useCameraDevice('back');
+  const cameraRef = useRef(null);
 
   // Fetch summary data
   const fetchSummery = async () => {
@@ -122,38 +125,33 @@ const DashboardScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    fetchSummery();
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    await fetchSummery();
+    setRefreshing(false);
   };
 
-  // Request camera permission
-  const requestCameraPermission = async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: 'Camera Permission',
-            message: 'This app needs access to your camera to take pictures.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          }
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          return true;
-        } else {
-          Alert.alert('Camera permission denied');
-          return false;
-        }
-      } catch (err) {
-        console.warn(err);
-        return false;
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      const cameraPermission = await Camera.getCameraPermissionStatus();
+      if (cameraPermission !== 'granted') {
+        await Camera.requestCameraPermission();
       }
-    } else {
-      return true; // iOS handles permissions differently, usually via Info.plist
+    };
+    checkCameraPermission();
+  }, []);
+
+  const takePhoto = async () => {
+    try {
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePhoto({
+          flash: 'off',
+          qualityPrioritization: 'quality',
+        });
+        return photo.path;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      throw error;
     }
   };
 
@@ -164,45 +162,48 @@ const DashboardScreen = ({ navigation }) => {
       return;
     }
 
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      return;
-    }
-
-    launchCamera({ mediaType: 'photo', quality: 1 }, async (response) => {
-      if (response.didCancel || response.error) {
-        Alert.alert('Error', 'Failed to capture photo.');
+    // Check camera permission
+    const cameraPermission = await Camera.getCameraPermissionStatus();
+    if (cameraPermission !== 'granted') {
+      const newPermission = await Camera.requestCameraPermission();
+      if (newPermission !== 'granted') {
+        Alert.alert('Error', 'Camera permission is required to punch in/out');
         return;
       }
+    }
 
-      const photo = response.assets[0].uri;
-      setLoading(true);
+    // Show camera view
+    setShowCamera(true);
+  };
 
-      try {
-        const formData = new FormData();
-        formData.append('status', isOnline ? 'out' : 'in');
-        formData.append('image', {
-          uri: photo,
-          type: 'image/jpeg',
-          name: 'punch.jpg',
-        });
+  const handlePhotoTaken = async (photoPath) => {
+    setShowCamera(false);
+    setLoading(true);
 
-        const punchResponse = await PunchInOut(formData);
-        if (punchResponse.success) {
-          const newStatus = !isOnline;
-          setIsOnline(newStatus);
-          await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
-          Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
-        } else {
-          Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        Alert.alert('Error', 'An error occurred while processing your request.');
-      } finally {
-        setLoading(false);
+    try {
+      const formData = new FormData();
+      formData.append('status', isOnline ? 'out' : 'in');
+      formData.append('image', {
+        uri: 'file://' + photoPath,
+        type: 'image/jpeg',
+        name: 'punch.jpg',
+      });
+
+      const punchResponse = await PunchInOut(formData);
+      if (punchResponse.success) {
+        const newStatus = !isOnline;
+        setIsOnline(newStatus);
+        await AsyncStorage.setItem('isOnline', JSON.stringify(newStatus));
+        Alert.alert('Success', `Punched ${newStatus ? 'In' : 'Out'} Successfully!`);
+      } else {
+        Alert.alert('Error', punchResponse.message || 'Failed to process punch.');
       }
-    });
+    } catch (err) {
+      console.error('Error:', err);
+      Alert.alert('Error', 'An error occurred while processing your request.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStatCard = (icon, value, label, amount, total = null, onPress) => {
@@ -230,7 +231,41 @@ const DashboardScreen = ({ navigation }) => {
     );
   }
 
-
+  if (showCamera && device) {
+    return (
+      <View style={StyleSheet.absoluteFill}>
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={true}
+          photo={true}
+        />
+        <View style={styles.cameraControls}>
+          <TouchableOpacity
+            style={styles.captureButton}
+            onPress={async () => {
+              try {
+                const photoPath = await takePhoto();
+                if (photoPath) {
+                  await handlePhotoTaken(photoPath);
+                }
+              } catch (error) {
+                setShowCamera(false);
+                Alert.alert('Error', 'Failed to capture photo.');
+              }
+            }}
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowCamera(false)}
+          >
+            <Icon name="close" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -326,6 +361,12 @@ const DashboardScreen = ({ navigation }) => {
           )}
         </View>
 
+        <TouchableOpacity style={{ paddingVertical: 15, borderWidth:1, borderRadius: 8, marginHorizontal: 5,marginVertical:5 }} onPress={() => navigation.navigate('Search')}>
+          <Text style={{  fontSize: 16, color: Color.primeBlue,marginLeft: 10 }}>
+            Search Medicine
+          </Text>
+        </TouchableOpacity>
+
         <SliderBox />
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 5, marginBottom: 10 }}>
@@ -336,6 +377,7 @@ const DashboardScreen = ({ navigation }) => {
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -377,9 +419,9 @@ const styles = StyleSheet.create({
   },
   branding: {
     backgroundColor: Color.primeBlue,
-    padding: height * 0.025,
+    padding: height * 0.01,
     alignItems: 'center',
-    height: height * 0.3,
+    height: height * 0.22,
   },
   brandTagline: {
     fontSize: width * 0.035,
@@ -439,6 +481,25 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: width * 0.04,
     color: 'red',
+  },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 40,
+    width: '100%',
+    alignItems: 'center',
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'white',
+    borderWidth: 5,
+    borderColor: '#ddd',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
   },
 });
 

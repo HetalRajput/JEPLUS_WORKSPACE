@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -7,121 +7,226 @@ import {
     FlatList, 
     StyleSheet, 
     ActivityIndicator,
-    RefreshControl 
+    RefreshControl,
+    ScrollView 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Color } from '../../../Constant/Constants';
-import { Employeecheakinout } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+import { Employeecheakinout, Getcoworker, GetCurrentmothdays } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
 const HomeScreen = ({ navigation }) => {
     // State management
-    const [employeeData, setEmployeeData] = useState(null);
+    const [employeeData, setEmployeeData] = useState({
+        name: 'Loading...',
+        Post: 'Loading...',
+        ECode: 'Loading...',
+        Status: 'Loading',
+        TimeIn: null,
+        TimeOut: null,
+        ADate: new Date().toISOString(),
+        present_days: 0,
+        absent_days: 0,
+        half_days: 0,
+        currentMonthDays: []
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [coworkers, setCoworkerData] = useState([]);
 
-    // Fetch data function
-    const fetchEmployeeData = async () => {
+    const fetchEmployeeData = useCallback(async () => {
         try {
-            setLoading(true);
-            setError(null);
-            const response = await Employeecheakinout();
-            
-            if (response.data) {
-                setEmployeeData(response.data);
-            } else {
-                setError('No data received from server');
+            const [employeeResponse, daysResponse] = await Promise.all([
+                Employeecheakinout(),
+                GetCurrentmothdays()
+            ]);
+    
+            console.log('Employee response:', employeeResponse);
+            console.log('Days response:', daysResponse);
+    
+            if (!employeeResponse.data || employeeResponse.data.length === 0) {
+                throw new Error('No employee data received');
             }
+    
+            // Extract attendance stats from daysResponse.data
+            const attendanceStats = {
+                present_days: daysResponse?.data?.present_days || 0,
+                absent_days: daysResponse?.data?.absent_days || 0,
+                half_days: daysResponse?.data?.half_days || 0,
+                late_entry: daysResponse?.data?.late_entry || 0
+            };
+    
+            console.log('Attendance stats:', attendanceStats);
+    
+            // Merge all data with proper fallbacks
+            const mergedData = {
+                name: employeeResponse.data[0]?.name || 'Unknown Employee',
+                Post: employeeResponse.data[0]?.Post || 'Unknown Post',
+                ECode: employeeResponse.data[0]?.ECode || 'N/A',
+                Status: employeeResponse.data[0]?.Status || 'Unknown',
+                TimeIn: employeeResponse.data[0]?.TimeIn || null,
+                TimeOut: employeeResponse.data[0]?.TimeOut || null,
+                ADate: employeeResponse.data[0]?.ADate || new Date().toISOString(),
+                ...attendanceStats,
+                currentMonthDays: [] // Empty array since we're not getting daily records
+            };
+    
+            setEmployeeData(mergedData);
+            return mergedData;
+    
         } catch (err) {
-            console.error('Error fetching data:', err);
-            setError(err.message || 'Failed to fetch data');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
+            console.error('Error fetching employee data:', err);
+            setError(err.message || 'Failed to fetch employee data');
+            throw err;
         }
-    };
-
-    // Initial data fetch
-    useEffect(() => {
-        fetchEmployeeData();
     }, []);
 
-    // Pull-to-refresh handler
-    const handleRefresh = () => {
-        setRefreshing(true);
-        fetchEmployeeData();
-    };
+    const fetchCoworkerData = useCallback(async (post) => {
+        try {
+            if (!post) throw new Error('No post available to fetch coworkers');
+            
+            const response = await Getcoworker(post);
+           
+            if (response.data && response.data.length > 0) {
+                const formattedCoworkers = response.data.map(coworker => ({
+                    id: coworker.ECode || coworker.Name,
+                    name: coworker.Name,
+                    image: require('../../../Assets/Image/profile.png'),
+                    status: coworker.Status || 'Unknown',
+                    post: coworker.post
+                }));
+                setCoworkerData(formattedCoworkers);
+            } else {
+                throw new Error('No coworker data received');
+            }
+        } catch (err) {
+            console.error('Error fetching coworker data:', err);
+            setError(err.message || 'Failed to fetch coworker data');
+            throw err;
+        }
+    }, []);
 
-    // Mock data for coworkers (should ideally come from API)
-    const coworkers = [
-        { id: 1, name: 'Beju Kamat', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 2, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
-        { id: 3, name: 'Sheyam', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 4, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
-        { id: 5, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 6, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
-        { id: 7, name: 'Rajesh', image: require('../../../Assets/Image/profile.png'), status: 'active' },
-        { id: 8, name: 'Ashok', image: require('../../../Assets/Image/profile.png'), status: 'inactive' },
-    ];
+    const refreshData = useCallback(async () => {
+        try {
+            setRefreshing(true);
+            setError(null);
+            
+            const employee = await fetchEmployeeData();
+            await fetchCoworkerData(employee?.Post);
+            
+        } catch (err) {
+            console.error('Refresh error:', err);
+        } finally {
+            setRefreshing(false);
+            setLoading(false);
+        }
+    }, [fetchEmployeeData, fetchCoworkerData]);
 
-    // Format time display
+    useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            await refreshData();
+        };
+        loadData();
+    }, [refreshData]);
+
     const formatTime = (time) => {
         if (!time) return '--:--';
-        // Add any time formatting logic here if needed
-        return time;
+        if (typeof time === 'string' && time.includes(':')) return time;
+        if (typeof time === 'string' && time.includes('-')) {
+            const date = new Date(time);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return '--:--';
     };
 
-    // Render helper for check-in/check-out section
+    const getStatusColor = (status) => {
+        const statusMap = {
+            present: '#28a745',
+            absent: '#dc3545',
+            'half day': '#ffc107',
+            late: '#fd7e14',
+            default: '#6c757d'
+        };
+        return statusMap[status?.toLowerCase()] || statusMap.default;
+    };
+
     const renderCheckInOut = () => {
-        if (loading) {
-            return <ActivityIndicator size="large" color="#007bff" />;
-        }
-        
-        if (error) {
-            return (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity onPress={fetchEmployeeData}>
-                        <Text style={styles.retryText}>Retry</Text>
-                    </TouchableOpacity>
-                </View>
-            );
-        }
+        if (loading && !refreshing) return <ActivityIndicator size="large" color="#007bff" />;
+        if (error) return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity onPress={refreshData}>
+                    <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+            </View>
+        );
 
-        if (!employeeData || employeeData.length === 0) {
-            return <Text style={styles.noDataText}>No check-in/check-out data available</Text>;
-        }
-
-        // Assuming API returns an array of check-in/out records
-        // Display only the most recent record
-        const latestRecord = employeeData[0];
-        
         return (
             <View style={styles.checkBoxContainer}>
                 <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkInBox]}>
-                    <Text style={styles.checkTime}>{formatTime(latestRecord.TimeIn)}</Text>
+                    <Text style={styles.checkTime}>{formatTime(employeeData.TimeIn)}</Text>
                     <Text style={styles.checkLabel}>Check In</Text>
                 </LinearGradient>
                 <LinearGradient colors={['#fff', '#fff']} style={[styles.checkBox, styles.checkOutBox]}>
-                    <Text style={styles.checkTime}>{formatTime(latestRecord.TimeOut)}</Text>
+                    <Text style={styles.checkTime}>{formatTime(employeeData.TimeOut)}</Text>
                     <Text style={styles.checkLabel}>Check Out</Text>
                 </LinearGradient>
             </View>
         );
     };
 
+    const renderCoworkerItem = ({ item }) => (
+        <View style={styles.coWorker}>
+            <View style={styles.imageContainer}>
+                <Image source={item.image} style={styles.coWorkerImg} />
+                <View style={[
+                    styles.statusIndicator,
+                    { backgroundColor: getStatusColor(item.status) }
+                ]} />
+            </View>
+            <Text style={styles.coWorkerName}>{item.name}</Text>
+        </View>
+    );
+
+    const ActionButton = ({ icon, label, onpress }) => (
+        <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => navigation.navigate(onpress)}
+        >
+            <View style={styles.actionIconContainer}>
+                <Icon name={icon} size={24} color="#007bff" />
+            </View>
+            <Text style={styles.actionLabel}>{label}</Text>
+        </TouchableOpacity>
+    );
+
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={refreshData}
+                    colors={['#007bff']}
+                />
+            }
+        >
             {/* Header */}
             <LinearGradient colors={['#007bff', '#0056b3']} style={styles.header}>
-                <Image source={require('../../../Assets/Image/profile.png')} style={styles.profileImg} />
+                <Image 
+                    source={require('../../../Assets/Image/profile.png')} 
+                    style={styles.profileImg} 
+                />
                 <View style={styles.headerTextContainer}>
-                    <Text style={styles.name}>Welcome User!</Text>
-                    <Text style={styles.role}>Supplyman • JE020</Text>
+                    <Text style={styles.name}>{employeeData.name}</Text>
+                    <Text style={styles.role}>
+                        {employeeData.Post} • {employeeData.ECode}
+                    </Text>
                 </View>
-                <View style={styles.status}>
-                    <Text style={styles.statusText}>Active</Text>
+                <View style={[styles.status, { backgroundColor: getStatusColor(employeeData.Status) }]}>
+                    <Text style={styles.statusText}>{employeeData.Status}</Text>
                 </View>
             </LinearGradient>
 
@@ -130,34 +235,29 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.sectionTitle}>Your Working Day</Text>
                 <View style={styles.stats}>
                     <View style={styles.statBox}>
-                        <Text style={styles.statValue}>20</Text>
+                        <Text style={styles.statValue}>{employeeData.present_days}</Text>
                         <Text style={styles.statLabel}>Present Days</Text>
                     </View>
                     <View style={styles.statBox}>
-                        <Text style={styles.statValue}>2</Text>
+                        <Text style={styles.statValue}>{employeeData.absent_days}</Text>
                         <Text style={styles.statLabel}>Absent Days</Text>
                     </View>
                     <View style={styles.statBox}>
-                        <Text style={styles.statValue}>1</Text>
+                        <Text style={styles.statValue}>{employeeData.half_days}</Text>
                         <Text style={styles.statLabel}>Half Days</Text>
                     </View>
                 </View>
             </View>
 
             {/* Check-In & Check-Out */}
-            <View style={styles.checkContainer} 
-                refreshControl={
-                    <RefreshControl 
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        colors={['#007bff']}
-                    />
-                }>
-                <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                })}</Text>
+            <View style={styles.checkContainer}>
+                <Text style={styles.dateText}>
+                    {new Date(employeeData.ADate).toLocaleDateString('en-US', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    })}
+                </Text>
                 {renderCheckInOut()}
             </View>
 
@@ -169,26 +269,22 @@ const HomeScreen = ({ navigation }) => {
                         <ActionButton 
                             icon="calendar" 
                             label="Leave" 
-                            onpress="View Leave" 
-                            navigation={navigation}
+                            onpress="View Leave"
                         />
                         <ActionButton 
                             icon="cash-outline" 
                             label="Salary"  
-                            onpress="Salary" 
-                            navigation={navigation}
+                            onpress="Salary"
                         />
                         <ActionButton 
                             icon="time-outline" 
                             label="Overtime" 
-                            onpress="Overtime" 
-                            navigation={navigation}
+                            onpress="Overtime"
                         />
                         <ActionButton 
                             icon="clipboard" 
                             label="Attendance"  
-                            onpress="Attendance" 
-                            navigation={navigation} 
+                            onpress="Attendance"
                         />
                     </View>
                 </View>
@@ -196,44 +292,28 @@ const HomeScreen = ({ navigation }) => {
                 {/* Co-Workers */}
                 <Text style={styles.coworkertext}>Co-Workers</Text>
                 <View style={styles.coWorkersContainer}>
-                    <FlatList
-                        data={coworkers}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        renderItem={({ item }) => (
-                            <View style={styles.coWorker}>
-                                <View style={styles.imageContainer}>
-                                    <Image source={item.image} style={styles.coWorkerImg} />
-                                    <View style={[
-                                        styles.statusIndicator,
-                                        item.status === 'active' 
-                                            ? styles.activeIndicator 
-                                            : styles.inactiveIndicator
-                                    ]} />
-                                </View>
-                                <Text style={styles.coWorkerName}>{item.name}</Text>
-                            </View>
-                        )}
-                        keyExtractor={(item) => item.id.toString()}
-                    />
+                    {loading && !refreshing ? (
+                        <ActivityIndicator size="small" color="#007bff" />
+                    ) : error ? (
+                        <Text style={styles.errorText}>Failed to load coworkers</Text>
+                    ) : coworkers.length === 0 ? (
+                        <Text style={styles.noDataText}>No coworkers available</Text>
+                    ) : (
+                        <FlatList
+                            data={coworkers}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            renderItem={renderCoworkerItem}
+                            keyExtractor={(item) => item.id}
+                        />
+                    )}
                 </View>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
-// Action Button Component
-const ActionButton = ({ icon, label, onpress, navigation }) => (
-    <TouchableOpacity 
-        style={styles.actionButton} 
-        onPress={() => navigation.navigate(onpress)}
-    >
-        <View style={styles.actionIconContainer}>
-            <Icon name={icon} size={24} color="#007bff" />
-        </View>
-        <Text style={styles.actionLabel}>{label}</Text>
-    </TouchableOpacity>
-);
+
 
 const styles = StyleSheet.create({
     container: {
@@ -280,7 +360,6 @@ const styles = StyleSheet.create({
         color: '#ddd',
     },
     status: {
-        backgroundColor: '#28a745',
         borderRadius: 15,
         paddingVertical: 5,
         paddingHorizontal: 12,
@@ -288,6 +367,7 @@ const styles = StyleSheet.create({
     statusText: {
         color: '#fff',
         fontWeight: 'bold',
+        fontSize: 12,
     },
     statsContainer: {
         backgroundColor: Color.primedarkblue,
@@ -404,18 +484,19 @@ const styles = StyleSheet.create({
     },
     coWorkersContainer: {
         paddingHorizontal: 10,
-        
+        minHeight: 120, // Ensure space for loading/error states
     },
-    coworkertext:{
+    coworkertext: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#333',
-        paddingHorizontal:15,
-        marginBottom:5
+        paddingHorizontal: 15,
+        marginBottom: 5
     },
     coWorker: {
         alignItems: 'center',
         marginRight: 15,
+        width: 80,
     },
     imageContainer: {
         position: 'relative',
@@ -437,16 +518,40 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'white',
     },
-    activeIndicator: {
+    activeIdicator: {
         backgroundColor: '#28a745',
     },
     inactiveIndicator: {
-        backgroundColor: '#6c757d',
+        backgroundColor: '#808080',
     },
     coWorkerName: {
-        fontSize: 14,
-        marginTop: 10,
+        fontSize: 12,
+        marginTop: 5,
         color: '#333',
+        textAlign: 'center',
+    },
+    coWorkerPost: {
+        fontSize: 10,
+        color: '#777',
+        textAlign: 'center',
+    },
+    errorContainer: {
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: '#dc3545',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    retryText: {
+        color: '#007bff',
+        fontWeight: 'bold',
+    },
+    noDataText: {
+        color: '#6c757d',
+        textAlign: 'center',
+        padding: 20,
     },
 });
 

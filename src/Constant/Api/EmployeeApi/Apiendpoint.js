@@ -47,5 +47,84 @@ export const Employeecheakinout = async (formData) => {
       };
     }
   };
+  export const Getcoworker = async (post) => {
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`  http://jemapps.in/api/employee/get-team-attendance/${post}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
   
   
+      return {
+        success: true,
+        data: response.data,
+        message: 'Coworker fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Coworker', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+
+  
+
+  export const GetAttendance = async (sdate , edate) => {
+    
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-attendance-by-date/${sdate}/${edate}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Attendance fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Attendance', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const GetCurrentmothdays = async (sdate , edate) => {
+    
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-working-days`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+  
+      return {
+        success: true,
+        data: response.data,
+        message: 'Attendance fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Attendance', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+ 

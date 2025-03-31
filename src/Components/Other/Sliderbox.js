@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef, } from 'react';
+import { View, Image, ScrollView, StyleSheet, Dimensions, onScroll} from 'react-native';
 import { Color } from '../../Constant/Constants';
 import { getBanner } from '../../Constant/Api/Apiendpoint';
 
@@ -13,39 +13,34 @@ const SliderBox = () => {
   useEffect(() => {
     const fetchBannerData = async () => {
       try {
-        const response = await getBanner(); // Call the API
+        const response = await getBanner();
+        console.log('API Response:', response); // Debug
+        
         if (response.success && Array.isArray(response.data)) {
-          setBanners(response.data); // Store the banners from the API
+          console.log('Banners:', response.data); // Debug
+          setBanners(response.data);
         } else {
-          console.error('Failed to fetch banners:', response.message);
+          console.error('API Error:', response.message);
+          // Test with fallback data
+          setBanners([{ url: 'https://via.placeholder.com/350x150' }]);
         }
       } catch (error) {
-        console.error('Error fetching banners:', error);
+        console.error('Fetch Error:', error);
+        // Test with fallback data
+        setBanners([{ url: 'https://via.placeholder.com/350x150' }]);
       }
     };
 
-    fetchBannerData(); // Invoke the fetch function
+    fetchBannerData();
   }, []);
 
+  // Debug: Log banners and screenWidth
   useEffect(() => {
-    if (banners.length > 0) {
-      const intervalId = setInterval(() => {
-        setCurrentIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % banners.length;
-          scrollViewRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
-          return nextIndex;
-        });
-      }, 3000); // Change the image every 3 seconds
-
-      return () => clearInterval(intervalId);
-    }
+    console.log('Banners state:', banners);
+    console.log('Screen width:', screenWidth);
   }, [banners]);
 
-  const onScroll = (event) => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(scrollPosition / screenWidth);
-    setCurrentIndex(newIndex);
-  };
+  // ... rest of your code ...
 
   return (
     <View style={styles.sliderContainer}>
@@ -59,11 +54,14 @@ const SliderBox = () => {
       >
         {banners.map((banner, index) => (
           <View key={index} style={styles.imageContainer}>
-            <Image source={{ uri: banner.url }} style={styles.bannerImage} />
+            <Image
+              source={{ uri: banner.url }}
+              style={styles.bannerImage}
+              onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+            />
           </View>
         ))}
       </ScrollView>
-      {/* Dots container hidden */}
     </View>
   );
 };
