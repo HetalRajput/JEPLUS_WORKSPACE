@@ -80,8 +80,7 @@ export const getUserInfo = async () => {
 
 export const getBanner = async () => {
   try {
-    const token = await getToken(); // Get token from AsyncStorage
-    const response = await axios.get(`http://jemapps.in/api/product/banners`);
+    const response = await axios.get(`http://jemapps.in/api/employee/get-banners`);
 
     // Return the user info with a success status
     return {

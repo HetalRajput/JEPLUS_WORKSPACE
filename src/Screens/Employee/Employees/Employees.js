@@ -1,80 +1,71 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TextInput, Dimensions, TouchableOpacity } from 'react-native';
-import { Color } from '../../../Constant/Constants';
-import LinearGradient from 'react-native-linear-gradient';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { GetEmployees } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
 const EmployeesScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Employee data with departments and posts
-  const employees = [
-    { 
-      id: 1, 
-      name: 'John Doe', 
-      department: 'Sales', 
-      post: 'Sales Executive',
-      status: 'present', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 2, 
-      name: 'Jane Smith', 
-      department: 'Tech', 
-      post: 'Frontend Developer',
-      status: 'present', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 3, 
-      name: 'Robert Johnson', 
-      department: 'Dispatch', 
-      post: 'Logistics Manager',
-      status: 'absent', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 4, 
-      name: 'Emily Davis', 
-      department: 'Purchase', 
-      post: 'Procurement Officer',
-      status: 'present', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 5, 
-      name: 'Michael Brown', 
-      department: 'Tech', 
-      post: 'Backend Developer',
-      status: 'absent', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 6, 
-      name: 'Sarah Wilson', 
-      department: 'Sales', 
-      post: 'Sales Manager',
-      status: 'present', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 7, 
-      name: 'David Taylor', 
-      department: 'Dispatch', 
-      post: 'Delivery Coordinator',
-      status: 'present', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-    { 
-      id: 8, 
-      name: 'Jessica Anderson', 
-      department: 'Purchase', 
-      post: 'Inventory Specialist',
-      status: 'absent', 
-      image: require('../../../Assets/Image/profile.png') 
-    },
-  ];
+  // Department colors mapping
+  const departmentColors = {
+    'SALES': '#FF6B6B',
+    'ACCOUNT': '#4ECDC4',
+    'DISPATCH': '#FFD166',
+    'PURCHASE': '#A78BFA',
+    'PICKER': '#A78BFA',
+    'DELIVERY': '#FFD166',
+    'PACKER': '#4ECDC4',
+    'MANAGER': '#FF6B6B',
+    'FOUNDER': '#800020',
+    'DEVELOPER': '#046A38',
+    // Add more department mappings as needed
+  };
+
+  // Fetch employees data from API
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      const response = await GetEmployees();
+      if (response.success) {
+        // Transform the API data to match your expected format
+        const formattedEmployees = response.data.map(emp => ({
+          id: emp.ECode,
+          name: emp.Name,
+          post: emp.Post.trim(), // Remove any whitespace
+          department: emp.Post.trim().split('\n')[0], // Get first part of post as department
+          status: emp.Status.toLowerCase(),
+          timeIn: emp.TimeIn,
+          timeOut: emp.TimeOut,
+          // Add a placeholder image or use actual image if available
+          image: require('../../../Assets/Image/profile.png'), // Placeholder image
+        }));
+        setEmployees(formattedEmployees);
+      } else {
+        setError(response.message || 'Failed to fetch employees');
+      }
+    } catch (error) {
+      setError(error.message || 'Failed to fetch employees data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Call fetchEmployees when the component mounts
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchEmployees();
+  };
 
   // Filter employees based on search query and active tab
   const filteredEmployees = employees.filter(emp => {
@@ -91,14 +82,6 @@ const EmployeesScreen = () => {
   const presentEmployees = employees.filter(emp => emp.status === 'present').length;
   const absentEmployees = employees.filter(emp => emp.status === 'absent').length;
 
-  // Department colors mapping
-  const departmentColors = {
-    'Sales': '#FF6B6B',
-    'Tech': '#4ECDC4',
-    'Dispatch': '#FFD166',
-    'Purchase': '#A78BFA',
-  };
-
   // Render employee item
   const renderEmployeeItem = ({ item }) => (
     <View style={styles.employeeItem}>
@@ -106,10 +89,12 @@ const EmployeesScreen = () => {
       <View style={styles.employeeInfo}>
         <Text style={styles.employeeName}>{item.name}</Text>
         <View style={styles.departmentRow}>
-          <View style={[styles.departmentBadge, { backgroundColor: departmentColors[item.department] }]}>
+          <View style={[styles.departmentBadge, { 
+            backgroundColor: departmentColors[item.department.toUpperCase()] || '#CCCCCC' 
+          }]}>
             <Text style={styles.departmentText}>{item.department}</Text>
           </View>
-          <Text style={styles.postText}>{item.post}</Text>
+         
         </View>
       </View>
       <View style={[
@@ -122,6 +107,25 @@ const EmployeesScreen = () => {
       </View>
     </View>
   );
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchEmployees}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -167,9 +171,10 @@ const EmployeesScreen = () => {
       <FlatList
         data={filteredEmployees}
         renderItem={renderEmployeeItem}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
-       
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="people-outline" size={50} color="#ccc" />
@@ -184,118 +189,80 @@ const EmployeesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryText: {
+    color: 'blue',
+    textDecorationLine: 'underline',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 25,
     paddingHorizontal: 15,
-    margin: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    paddingVertical: 10,
+    backgroundColor: '#f5f5f5',
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    height: 45,
+    height: 40,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 15,
     fontSize: 16,
-    color: '#333',
   },
   clearButton: {
-    padding: 5,
+    marginLeft: 10,
   },
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: 5,
-    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   tabButton: {
     flex: 1,
+    paddingVertical: 15,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: Color.primedarkblue,
+    borderBottomWidth: 2,
+    borderBottomColor: '#007AFF',
   },
   tabText: {
+    color: '#666',
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
   },
   activeTabText: {
-    color: Color.primedarkblue,
-    fontWeight: '600',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderRadius: 15,
-    marginHorizontal: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#eee',
-    fontWeight: '500',
+    color: '#007AFF',
   },
   listContainer: {
-    paddingHorizontal: 5,
     paddingBottom: 20,
-  },
-  listHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Color.primedarkblue,
-    marginVertical: 10,
-    marginLeft: 5,
   },
   employeeItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   employeeImage: {
     width: 50,
@@ -308,60 +275,54 @@ const styles = StyleSheet.create({
   },
   employeeName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: '500',
+    marginBottom: 5,
   },
   departmentRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   departmentBadge: {
-    borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: 10,
     marginRight: 8,
   },
   departmentText: {
-    fontSize: 12,
-    fontWeight: '600',
     color: '#fff',
+    fontSize: 12,
   },
   postText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
   },
   statusBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 15,
+    borderRadius: 10,
   },
   presentBadge: {
-    backgroundColor: '#d4edda',
+    backgroundColor: '#e6f7ee',
   },
   absentBadge: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: '#ffebee',
   },
   presentText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#155724',
+    color: '#00a854',
   },
   absentText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#721c24',
+    color: '#f44336',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 50,
+    padding: 50,
   },
   emptyText: {
-    fontSize: 16,
+    marginTop: 15,
     color: '#999',
-    marginTop: 10,
+    fontSize: 16,
   },
 });
 

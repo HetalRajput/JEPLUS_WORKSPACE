@@ -48,6 +48,8 @@ export const Employeecheakinout = async (formData) => {
     }
   };
   export const Getcoworker = async (post) => {
+    console.log(post);
+    
     const token = await getToken(); // Get token from AsyncStorage 
   
     try {
@@ -120,6 +122,27 @@ export const Employeecheakinout = async (formData) => {
       };
     } catch (error) {
       console.error('Error fetching Attendance', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const GetEmployees = async () => {
+    
+
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-all-employee-stat`);
+  
+        console.log("this is employee data -->",response.data)
+      return {
+        success: true,
+        data: response.data,
+        message: 'Employee fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Employee', error);
   
       return {
         success: false,

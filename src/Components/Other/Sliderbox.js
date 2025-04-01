@@ -1,46 +1,49 @@
-import React, { useState, useEffect, useRef, } from 'react';
-import { View, Image, ScrollView, StyleSheet, Dimensions, onScroll} from 'react-native';
-import { Color } from '../../Constant/Constants';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Image, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { getBanner } from '../../Constant/Api/Apiendpoint';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+const FALLBACK_IMAGE = 'https://via.placeholder.com/350x150';
+
 const SliderBox = () => {
   const scrollViewRef = useRef(null);
   const [banners, setBanners] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [errorImages, setErrorImages] = useState({});
 
   useEffect(() => {
     const fetchBannerData = async () => {
       try {
         const response = await getBanner();
-        console.log('API Response:', response); // Debug
-        
+        console.log('API Response:', response);
+
         if (response.success && Array.isArray(response.data)) {
-          console.log('Banners:', response.data); // Debug
-          setBanners(response.data);
+          const sanitizedBanners = response.data.map((item) => {
+            let fixedUrl = item.url
+              .replace('.jpg.png', '.jpg') // Fix incorrect file extension
+              .replace(/^http:/, 'https:'); // Try enforcing HTTPS
+
+            return { url: fixedUrl, originalUrl: item.url }; // Store original for fallback
+          });
+
+          setBanners(sanitizedBanners);
         } else {
           console.error('API Error:', response.message);
-          // Test with fallback data
-          setBanners([{ url: 'https://via.placeholder.com/350x150' }]);
+          setBanners([{ url: FALLBACK_IMAGE }]);
         }
       } catch (error) {
         console.error('Fetch Error:', error);
-        // Test with fallback data
-        setBanners([{ url: 'https://via.placeholder.com/350x150' }]);
+        setBanners([{ url: FALLBACK_IMAGE }]);
       }
     };
 
     fetchBannerData();
   }, []);
 
-  // Debug: Log banners and screenWidth
-  useEffect(() => {
-    console.log('Banners state:', banners);
-    console.log('Screen width:', screenWidth);
-  }, [banners]);
-
-  // ... rest of your code ...
+  const handleImageError = (index, originalUrl) => {
+    setErrorImages((prev) => ({ ...prev, [index]: true }));
+    console.log(`Image failed to load: ${originalUrl}`);
+  };
 
   return (
     <View style={styles.sliderContainer}>
@@ -49,15 +52,14 @@ const SliderBox = () => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
         scrollEventThrottle={16}
       >
         {banners.map((banner, index) => (
           <View key={index} style={styles.imageContainer}>
             <Image
-              source={{ uri: banner.url }}
+              source={{ uri: errorImages[index] ? FALLBACK_IMAGE : banner.url }}
               style={styles.bannerImage}
-              onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+              onError={() => handleImageError(index, banner.originalUrl)}
             />
           </View>
         ))}
@@ -71,22 +73,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 175,
     borderRadius: 15,
-    marginTop:-2,
-      
+    marginTop: -2,
   },
   imageContainer: {
     width: screenWidth,
     height: 164,
     padding: 5,
-    
-
   },
   bannerImage: {
     width: '100%',
     height: '100%',
-    resizeMode: "contain",
+    resizeMode: 'cover',
     borderRadius: 15,
-   
   },
 });
 

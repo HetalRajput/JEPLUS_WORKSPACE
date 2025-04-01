@@ -221,9 +221,7 @@ const HomeScreen = ({ navigation }) => {
                 />
                 <View style={styles.headerTextContainer}>
                     <Text style={styles.name}>{employeeData.name}</Text>
-                    <Text style={styles.role}>
-                        {employeeData.Post} • {employeeData.ECode}
-                    </Text>
+                    <Text style={styles.role}>{employeeData.Post} • {employeeData.ECode}</Text>
                 </View>
                 <View style={[styles.status, { backgroundColor: getStatusColor(employeeData.Status) }]}>
                     <Text style={styles.statusText}>{employeeData.Status}</Text>
@@ -245,6 +243,10 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.statBox}>
                         <Text style={styles.statValue}>{employeeData.half_days}</Text>
                         <Text style={styles.statLabel}>Half Days</Text>
+                    </View>
+                    <View style={styles.statBox}>
+                        <Text style={styles.statValue}>{employeeData.late_entry}</Text>
+                        <Text style={styles.statLabel}>Late Entry</Text>
                     </View>
                 </View>
             </View>
@@ -349,6 +351,7 @@ const styles = StyleSheet.create({
     },
     headerTextContainer: {
         flex: 1,
+        
     },
     name: {
         fontSize: 20,
@@ -358,6 +361,8 @@ const styles = StyleSheet.create({
     role: {
         fontSize: 14,
         color: '#ddd',
+        width: 150,
+    
     },
     status: {
         borderRadius: 15,
