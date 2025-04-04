@@ -4,10 +4,41 @@ import { Picker } from '@react-native-picker/picker';
 import { PieChart } from 'react-native-chart-kit';
 import { Color } from '../../../Constant/Constants';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { GetSalary } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+
 
 const SalaryScreen = () => {
   const [selectedYear, setSelectedYear] = useState('2024');
   const [selectedMonth, setSelectedMonth] = useState('January');
+
+  const [salaryDat, setSalaryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+
+  const fetchSalaryData = async () => {
+    try {
+      const response = await GetSalary();
+      console.log("salary data >>>>>>",response);
+      
+      if (response.success) {
+        setSalaryData(response.data);
+        setLoading(false);
+      } else {
+        setError(response.message);
+        setLoading(false);
+      }
+    } catch (error) {
+      setError('Failed to fetch salary data. Please try again later.');
+      setLoading(false);
+    }
+  };
+
+  // Call the function to fetch salary data when the component mounts
+  React.useEffect(() => {
+    fetchSalaryData();
+  }, []);
+
 
   const salaryData = [
     { year: '2023', month: 'November', basic: 48000, advance: 4500, deduction: 1800, overtime: 2500, leaves: 3, halfDays: 2, lateEntries: 4, totalDays: 30 },

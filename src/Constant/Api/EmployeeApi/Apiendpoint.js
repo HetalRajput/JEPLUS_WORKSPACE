@@ -150,4 +150,84 @@ export const Employeecheakinout = async (formData) => {
       };
     }
   };
- 
+  export const GetOvertime = async () => {
+    
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-overtime`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+    console.log(response.data);
+    
+      return {
+        success: true,
+        data: response.data,
+        message: 'Attendance fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Attendance', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const GetLeave = async () => {
+    
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-leave-history`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+    console.log(response.data);
+    
+      return {
+        success: true,
+        data: response.data,
+        message: 'Leave fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching Leave', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const GetSalary = async () => {
+    
+    const token = await getToken(); // Get token from AsyncStorage 
+  
+    try {
+      const response = await axios.get(`https://jemapps.in/api/employee/get-salary-breakdown/2/2025`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+        }
+      });
+  
+    console.log(response.data);
+    
+      return {
+        success: true,
+        data: response.data,
+        message: 'Salary fetch successfully'
+      };
+    } catch (error) {
+      console.error('Error fetching salary', error);
+  
+      return {
+        success: false,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };

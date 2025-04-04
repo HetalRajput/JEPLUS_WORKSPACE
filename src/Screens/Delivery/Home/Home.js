@@ -325,7 +325,7 @@ const DashboardScreen = ({ navigation }) => {
           </View>
 
           <View style={{ marginTop: 20 }}>
-            <SliderBox />
+            {/* <SliderBox /> */}
           </View>
         </View>
       </View>

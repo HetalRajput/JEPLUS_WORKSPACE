@@ -9,14 +9,16 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Color } from "../../Constant/Constants";
-import ImagePicker from "react-native-image-crop-picker";
 import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
 import { RadioButton } from "react-native-paper";
+import { launchImageLibrary } from 'react-native-image-picker';
+import { CameraComponent } from "./CameraComponent";
 
-export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo ,acno }) => {
+export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount, tagNo, acno }) => {
   const totalAmount = totalOSAmount;
 
   const [amount, setAmount] = useState(totalAmount.toString());
@@ -27,8 +29,8 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
   const [missingData, setMissingData] = useState("");
   const [paymentStatus, setPaymentStatus] = useState([]);
   const [showReasons, setShowReasons] = useState(false);
-  const [selectedReason, setSelectedReason] = useState(" "); // Add selectedReason state
-
+  const [selectedReason, setSelectedReason] = useState(" ");
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   useEffect(() => {
     const collectedAmount = parseFloat(amount) || 0;
@@ -50,7 +52,28 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
     setPaymentStatus(updatedPaymentStatus);
   }, [amount, selectedInvoices]);
 
-  
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.5,
+        maxWidth: 1080,
+        maxHeight: 1920,
+      });
+      
+      if (!result.didCancel && result.assets && result.assets.length > 0) {
+        setCashPhoto(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error selecting image from gallery:", error);
+    }
+  };
+
+  const handleCameraCapture = (uri) => {
+    setCashPhoto(uri);
+    setIsCameraOpen(false);
+  };
+
   const handlePayment = async () => {
     const missingFields = [];
     if (!amount) missingFields.push("Collected Amount");
@@ -59,10 +82,10 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
       setErrorModalVisible(true);
       return;
     }
-    if(!cashPhoto){
+    if (!cashPhoto) {
       setMissingData("Please capture the cash image for a reason.");
       setErrorModalVisible(true);
-      return; 
+      return;
     }
     if (missingFields.length > 0) {
       setMissingData(`Please fill the following data: ${missingFields.join(", ")}`);
@@ -72,23 +95,17 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
 
     setIsLoading(true);
 
-    // Create the payload
     const payload = new FormData();
-
-    // Add image as a file
     if (cashPhoto) {
       payload.append("image", {
         uri: cashPhoto,
-        name: "cashPhoto.jpg", // Set a filename
-        type: "image/jpeg", // Set the MIME type
+        name: "cashPhoto.jpg",
+        type: "image/jpeg",
       });
     }
 
-    // Add lat and long as separate fields
     payload.append("lat", "28.2342434");
     payload.append("long", "78.2234234");
-
-    // Add invoices as a JSON string
     payload.append(
       "data",
       JSON.stringify(
@@ -97,16 +114,15 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
           tagno: String(invoice.tagNo),
           amount: String(invoice.paidAmount),
           paymethod: "Cash",
-          CollBoyRemarks: selectedReason || "success", // Include selectedReason in remarks
+          CollBoyRemarks: selectedReason || "success",
         }))
       )
     );
 
     try {
-      // Simulate API call
+      console.log(">>>>>",payload);
+      
       const response = await CollectionPay(payload);
-      console.log(response);
-
       if (response.success) {
         setSuccessModal(true);
       } else {
@@ -121,62 +137,14 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
     }
   };
 
-  const pickImage = async (setPhoto) => {
-    const options = {
-      mediaType: "photo",
-      quality: 0.5, // Reduce quality to 50%
-      width: 1080,
-      height: 1920,
-      saveToPhotos: false,
-      compressImageQuality: 0.5, // Compress image to 50% of original size
-    };
-
-    try {
-      const image = await ImagePicker.openCamera(options);
-      setPhoto(image.path);
-    } catch (error) {
-      console.error("Error selecting image:", error.message);
-    }
-  };
-
-  const pickImageFromGallery = async (setPhoto) => {
-    try {
-      const image = await ImagePicker.openPicker({
-        width: 300,
-        height: 400,
-        mediaType: "photo",
-        compressImageQuality: 0.5, // Compress image to 50% of original size
-      });
-
-      const allowedFormats = ["jpg", "jpeg", "png"];
-      const fileExtension = image.path.split(".").pop().toLowerCase();
-
-      if (allowedFormats.includes(fileExtension)) {
-        setPhoto(image.path);
-      } else {
-        console.warn("Invalid file format. Please select a JPEG or PNG image.");
-      }
-    } catch (error) {
-      if (error.code === "E_PICKER_CANCELLED") {
-        console.log("User cancelled image selection");
-      } else {
-        console.error("Error selecting image from gallery:", error.message);
-      }
-    }
-  };
-
   const handleOk = () => {
-    // Reset all states
     setAmount(totalAmount.toString());
     setCashPhoto(null);
     setPaymentStatus([]);
     setSuccessModal(false);
     setShowReasons(false);
-    setSelectedReason(""); // Reset selected reason
-
-    // Navigate back to the previous screen
-    navigation.navigate("Invoices",{tagNo , acno})
-
+    setSelectedReason("");
+    navigation.navigate("Invoices", { tagNo, acno });
   };
 
   const handleErrorModalClose = () => {
@@ -189,7 +157,6 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
         <Text style={styles.title}>Cash Payment: ₹{totalAmount}</Text>
         <Text style={styles.description}>Collect cash from the customer.</Text>
 
-
         <TextInput
           style={styles.input}
           placeholder="Enter Collected Amount"
@@ -200,6 +167,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
             setShowReasons(value && parseFloat(value) < totalOSAmount);
           }}
         />
+        
         {showReasons && (
           <View style={styles.radioContainer}>
             <Text style={styles.reasonTitle}>Select a reason for less amount:</Text>
@@ -223,15 +191,14 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.captureButton1, styles.flexButton]}
-            onPress={() => pickImage(setCashPhoto)}
+            onPress={() => setIsCameraOpen(true)}
           >
             <Icon name="camera" size={20} color="black" />
             <Text> Capture Cash Photo</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            style={[styles.captureButton2, { marginHorizontal: 0 }]}
-            onPress={() => pickImageFromGallery(setCashPhoto)}
+            style={[styles.captureButton2]}
+            onPress={pickImageFromGallery}
           >
             <Icon name="image" size={20} color="white" />
           </TouchableOpacity>
@@ -239,7 +206,11 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
 
         {cashPhoto && (
           <View style={styles.imageContainer}>
-            <Image source={{ uri: cashPhoto }} style={styles.previewImage} />
+            <Image 
+              source={{ uri: cashPhoto }} 
+              style={styles.previewImage}
+              onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+            />
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setCashPhoto(null)}
@@ -248,6 +219,18 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
             </TouchableOpacity>
           </View>
         )}
+
+        <TouchableOpacity 
+          style={styles.paymentButton} 
+          onPress={handlePayment}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.paymentText}>Submit Payment</Text>
+          )}
+        </TouchableOpacity>
 
         <View style={styles.paymentStatusContainer}>
           <Text style={styles.paymentStatusTitle}>Payment Status:</Text>
@@ -279,18 +262,22 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
             </View>
           ))}
         </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.deliveredButton}
-            onPress={handlePayment}
-            disabled={isLoading}
-          >
-            {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Collect</Text>}
-          </TouchableOpacity>
-        </View>
       </View>
 
+      {/* Camera Modal */}
+      <Modal
+        visible={isCameraOpen}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsCameraOpen(false)}
+      >
+        <CameraComponent 
+          onCapture={handleCameraCapture}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      </Modal>
+
+      {/* Success Modal */}
       <Modal visible={successModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -303,6 +290,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
         </View>
       </Modal>
 
+      {/* Error Modal */}
       <Modal visible={errorModalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -317,8 +305,6 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount,tagNo 
     </ScrollView>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   card: {
@@ -381,22 +367,17 @@ const styles = StyleSheet.create({
   flexButton: {
     flex: 1,
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
+  paymentButton: {
+    backgroundColor: Color.primeBlue,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 10,
   },
-  deliveredButton: {
-    backgroundColor: "#2ecc71",
-    paddingVertical: 10,
-    borderRadius: 5,
-    flex: 1,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
+  paymentText: {
+    color: 'white',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
   imageContainer: {
     marginBottom: 10,
@@ -482,11 +463,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 5,
-  },
-  radioLabel: {
-    fontSize: 14,
-    color: "#333",
-    marginLeft: 5,
   },
   statusBadge: {
     paddingHorizontal: 10,

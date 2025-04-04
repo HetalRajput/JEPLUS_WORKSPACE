@@ -84,18 +84,11 @@ export const GetcollectionCustomer = async (startDate,endDate) => {
   };
   export const getCustomerInvoice = async (TagNo , acno) => {
 
- 
-    
     try {
-    
-    
+        
       const response = await axios.get(`http://jemapps.in/api/collection/get-invoice/${TagNo}/${acno}`,);
   
-      // Return the user info with a success status
-           
-
-     
-      
+      // Return the user info with a success status 
       return {
         success: true,
         data: response.data, // User info data

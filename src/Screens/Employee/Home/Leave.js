@@ -1,9 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import LeaveDetailPopup from '../../../Components/Employees/Leavepopup';
+import { GetLeave } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+
 const LeaveScreen = ({navigation}) => {
     const [isPopupVisible, setPopupVisible] = useState(false);
     const [selectedLeave, setSelectedLeave] = useState(null);
+     
+    // Sample data for leave summary and applications
+    // In a real application, this data would be fetched from an API or state management store
+     const [leave, setLeaves] = useState([]);
+    const [recentApplication, setRecentApplications] = useState([]);
+    const [pastApplication, setPastApplications] = useState([]);
+
+    const fetchLeaveData = async () => {
+        const response = await GetLeave();
+        console.log("this is leave dattaa",response.data);
+        
+        if (response.success) {
+            setLeaves(response.data.leave_summary);
+            setRecentApplications(response.data.recent_applications);
+            setPastApplications(response.data.past_applications);
+        } else {
+            console.error('Error fetching leave data:', response.message);
+        }
+    };
+    // Call fetchLeaveData when the component mounts or when needed
+    useEffect(() => {
+        fetchLeaveData();
+    }, []);
+
+ 
+
+
+
+
     const leaves = {
         total: 5,
         approved: 3,

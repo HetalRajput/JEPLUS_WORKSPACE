@@ -106,6 +106,9 @@ export const ApprovalCard = ({ item, navigation }) => {
   const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
 
+
+   
+
   const persons = [
     { id: "2", name: "ROHIT JHA" },
     { id: "3", name: "BHOLA MISHRA" }
@@ -116,7 +119,7 @@ export const ApprovalCard = ({ item, navigation }) => {
       Alert.alert("Error", "Please select a person.");
       return;
     }
-    console.log(item.acno,selectedPerson);
+
     
     const response = await Sendotp(item.acno,selectedPerson);
     
@@ -172,7 +175,7 @@ export const ApprovalCard = ({ item, navigation }) => {
     setIsLoading(true);
     try {
       const location = await getCurrentLocation();
-      console.log(location);
+    
 
       const formData = new FormData();
       formData.append("Vno", item.id);
@@ -187,17 +190,14 @@ export const ApprovalCard = ({ item, navigation }) => {
       formData.append("Lat", location.latitude || "0.0");
       formData.append("Long", location.longitude || "0.0");
       if (invoicePhoto) {
-        formData.append("image2", {
+        formData.append("image1", {
           uri: invoicePhoto,
           type: "image/jpeg",
           name: "invoice_payment.jpg",
         });
       }
-      // formData.append("image1", {});
 
       const response = await Pay(formData);
-      console.log(">>>>>>>>>>",response);
-    
     
       if (response) {
         setSuccessModal(true);
