@@ -16,6 +16,7 @@ const UpdateModal = ({
   const strokeDashoffset = circleCircumference - (circleCircumference * downloadProgress) / 100;
   const downloadComplete = downloadProgress >= 99;
 
+
   return (
     <Modal
       visible={visible}

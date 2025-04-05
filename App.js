@@ -13,6 +13,8 @@ const App = () => {
   const [downloadedSize, setDownloadedSize] = useState(0);
   const [totalSize, setTotalSize] = useState(0);
  
+console.log("Update Info:", updateInfo);
+
 
   
   useEffect(() => {
@@ -93,7 +95,7 @@ const App = () => {
         <AppNavigator />
         <UpdateModal
           visible={updateInfo?.updateAvailable || false}
-          isMandatory={false}
+          isMandatory={updateInfo?.isMandatory }
           releaseNotes={updateInfo?.releaseNotes}
           onUpdate={handleUpdate}
           onCancel={updateInfo?.isMandatory ? null : handleCancel}
