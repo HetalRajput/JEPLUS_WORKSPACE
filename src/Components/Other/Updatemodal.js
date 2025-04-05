@@ -14,7 +14,7 @@ const UpdateModal = ({
   const radius = 40;
   const circleCircumference = 2 * Math.PI * radius;
   const strokeDashoffset = circleCircumference - (circleCircumference * downloadProgress) / 100;
-  const downloadComplete = downloadProgress >= 100;
+  const downloadComplete = downloadProgress >= 99;
 
   return (
     <Modal

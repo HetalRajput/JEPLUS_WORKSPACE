@@ -1,152 +1,176 @@
-import React, { useState , useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import LeaveDetailPopup from '../../../Components/Employees/Leavepopup';
 import { GetLeave } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
-const LeaveScreen = ({navigation}) => {
-    const [isPopupVisible, setPopupVisible] = useState(false);
-    const [selectedLeave, setSelectedLeave] = useState(null);
-     
-    // Sample data for leave summary and applications
-    // In a real application, this data would be fetched from an API or state management store
-     const [leave, setLeaves] = useState([]);
-    const [recentApplication, setRecentApplications] = useState([]);
-    const [pastApplication, setPastApplications] = useState([]);
+const LeaveScreen = ({ navigation }) => {
+  const [isPopupVisible, setPopupVisible] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(null);
 
-    const fetchLeaveData = async () => {
-        const response = await GetLeave();
-        console.log("this is leave dattaa",response.data);
-        
-        if (response.success) {
-            setLeaves(response.data.leave_summary);
-            setRecentApplications(response.data.recent_applications);
-            setPastApplications(response.data.past_applications);
-        } else {
-            console.error('Error fetching leave data:', response.message);
-        }
-    };
-    // Call fetchLeaveData when the component mounts or when needed
-    useEffect(() => {
-        fetchLeaveData();
-    }, []);
+  const [leaves, setLeaves] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
+  const [recentApplications, setRecentApplications] = useState([]);
+  const [pastApplications, setPastApplications] = useState([]);
 
- 
+  const fetchLeaveData = async () => {
+    try {
+      const response = await GetLeave();
 
+      if (response.status === 404) {
+        console.log("No records found");
+        setLeaves({ total: 0, approved: 0, pending: 0, rejected: 0 });
+        setRecentApplications([]);
+        setPastApplications([]);
+      } else if (response.success) {
+        const data = response.data?.data || [];
 
+        // Calculate leave summary
+        let approved = 0, pending = 0, rejected = 0;
+        data.forEach(item => {
+          if (item.status === 'Approved') approved++;
+          else if (item.status === 'Pending') pending++;
+          else if (item.status === 'Rejected') rejected++;
+        });
 
+        const formattedApplications = data.map(item => ({
+          id: item.id,
+          type: item.leaveType,
+          status: item.status || 'Pending', // default fallback
+          applyDate: formatDate(item.appliedDate),
+          date: `${formatDate(item.startDate)} - ${formatDate(item.endDate)}`,
+          imageUrl: item.imageUrl,
+          subject: item.subject,
+          reason: item.reason
+        }));
 
-    const leaves = {
-        total: 5,
-        approved: 3,
-        pending: 1,
-        rejected: 1,
-    };
+        // Split into recent & past (you can customize this logic)
+        const recent = formattedApplications.slice(0, 2);
+        const past = formattedApplications.slice(2);
 
-    const recentApplications = [
-        { id: 1, type: 'Annual Leave', date: '2 Mar 2025 - 3 Mar 2025', status: 'Pending', applyDate: '1 March 2025' }
-    ];
+        setLeaves({
+          total: data.length,
+          approved,
+          pending,
+          rejected
+        });
+        setRecentApplications(recent);
+        setPastApplications(past);
+      } else {
+        console.error('Error fetching leave data:', response.message);
+      }
+    } catch (error) {
+      console.error('Error fetching leave data:', error);
+    }
+  };
 
-    const pastApplications = [
-        { id: 2, type: 'Annual Leave', date: '2 Mar 2025 - 3 Mar 2025', status: 'Approved', applyDate: '1 March 2025' },
-        { id: 3, type: 'Annual Leave', date: '2 Mar 2025 - 3 Mar 2025', status: 'Approved', applyDate: '1 March 2025' },
-        { id: 4, type: 'Annual Leave', date: '2 Mar 2025 - 3 Mar 2025', status: 'Rejected', applyDate: '1 March 2025' },
-        { id: 5, type: 'Annual Leave', date: '2 Mar 2025 - 3 Mar 2025', status: 'Approved', applyDate: '1 March 2025' },
-    ];
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Approved': return '#4CAF50';  // Green
-            case 'Pending': return '#F9A825';   // Yellow
-            case 'Rejected': return '#E53935';  // Red
-            default: return '#607D8B';          // Grey
-        }
-    };
-    const handleOpenPopup = (leave) => {
-        setSelectedLeave(leave);
-        setPopupVisible(true);
-    };
+  useEffect(() => {
+    fetchLeaveData();
+  }, []);
 
-    const handleClosePopup = () => {
-        setPopupVisible(false);
-        setSelectedLeave(null);
-    };
-    const renderItem = ({ item }) => (
-        <TouchableOpacity style={styles.card} onPress={() => handleOpenPopup(item)}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.leaveType}>{item.type}</Text>
-                <Text style={styles.applyDate}>Apply Date: {item.applyDate}</Text>
-            </View>
-            <Text style={styles.leaveDate}>{item.date} (Full day)</Text>
-            <Text style={styles.description}>Lorem ipsum napptmerometer reskade när dekakäling kotos...</Text>
-            <View style={styles.statusContainer}>
-                <Text style={[styles.status, { backgroundColor: getStatusColor(item.status) }]}>
-                    {item.status}
-                </Text>
-            </View>
-        </TouchableOpacity>
-    );
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Approved': return '#4CAF50';
+      case 'Pending': return '#F9A825';
+      case 'Rejected': return '#E53935';
+      default: return '#607D8B';
+    }
+  };
 
-    const handleApplyLeave = () => {
-       navigation.navigate('Apply Leave');
-        // Navigate to Apply Leave screen or open a modal
-    };
+  const handleOpenPopup = (leave) => {
+    setSelectedLeave(leave);
+    setPopupVisible(true);
+  };
 
-    return (
-        <View style={styles.mainContainer}>
-            <ScrollView style={styles.container}>
-                {/* Leave Summary */}
-                <View style={styles.summaryContainer}>
-                    <View style={[styles.summaryBox, styles.totalBox]}>
-                        <Text style={styles.summaryCount}>{leaves.total}</Text>
-                        <Text style={styles.summaryLabel}>Total Leave</Text>
-                    </View>
-                    <View style={[styles.summaryBox, styles.approvedBox]}>
-                        <Text style={styles.summaryCount}>{leaves.approved}</Text>
-                        <Text style={styles.summaryLabel}>Approved Leave</Text>
-                    </View>
-                    <View style={[styles.summaryBox, styles.pendingBox]}>
-                        <Text style={styles.summaryCount}>{leaves.pending}</Text>
-                        <Text style={styles.summaryLabel}>Pending Leave</Text>
-                    </View>
-                    <View style={[styles.summaryBox, styles.rejectedBox]}>
-                        <Text style={styles.summaryCount}>{leaves.rejected}</Text>
-                        <Text style={styles.summaryLabel}>Reject Leave</Text>
-                    </View>
-                </View>
+  const handleClosePopup = () => {
+    setPopupVisible(false);
+    setSelectedLeave(null);
+  };
 
-                {/* Recent Applications */}
-                <Text style={styles.sectionTitle}>Recent Application:</Text>
-                <FlatList
-                    data={recentApplications}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    scrollEnabled={false}
-                />
+  const renderItem = ({ item }) => (
+    <TouchableOpacity style={styles.card} onPress={() => handleOpenPopup(item)}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.leaveType}>{item.type}</Text>
+        <Text style={styles.applyDate}>Apply Date: {item.applyDate}</Text>
+      </View>
+      <Text style={styles.leaveDate}>{item.date} (Full day)</Text>
+      <Text style={styles.description}>{item.subject}</Text>
+      <View style={styles.statusContainer}>
+        <Text style={[styles.status, { backgroundColor: getStatusColor(item.status) }]}>
+          {item.status}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
-                {/* Past Applications */}
-                <Text style={styles.sectionTitle}>Past Application:</Text>
-                <FlatList
-                    data={pastApplications}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    scrollEnabled={false}
-                />
-            </ScrollView>
+  const handleApplyLeave = () => {
+    navigation.navigate('Apply Leave');
+  };
 
-            {/* Apply Leave Button */}
-            <TouchableOpacity style={styles.applyButton} onPress={handleApplyLeave}>
-                <View style={styles.applyButtonGradient}>
-                    <Text style={styles.applyButtonText}>Apply Leave</Text>
-                </View>
-            </TouchableOpacity>
-            <LeaveDetailPopup
-                visible={isPopupVisible}
-                onClose={handleClosePopup}
-                leave={selectedLeave}
-            />
+  return (
+    <View style={styles.mainContainer}>
+      <ScrollView style={styles.container}>
+        {/* Leave Summary */}
+        <View style={styles.summaryContainer}>
+          <View style={[styles.summaryBox, styles.totalBox]}>
+            <Text style={styles.summaryCount}>{leaves.total}</Text>
+            <Text style={styles.summaryLabel}>Total Leave</Text>
+          </View>
+          <View style={[styles.summaryBox, styles.approvedBox]}>
+            <Text style={styles.summaryCount}>{leaves.approved}</Text>
+            <Text style={styles.summaryLabel}>Approved Leave</Text>
+          </View>
+          <View style={[styles.summaryBox, styles.pendingBox]}>
+            <Text style={styles.summaryCount}>{leaves.pending}</Text>
+            <Text style={styles.summaryLabel}>Pending Leave</Text>
+          </View>
+          <View style={[styles.summaryBox, styles.rejectedBox]}>
+            <Text style={styles.summaryCount}>{leaves.rejected}</Text>
+            <Text style={styles.summaryLabel}>Reject Leave</Text>
+          </View>
         </View>
-    );
+
+        {/* Recent Applications */}
+        <Text style={styles.sectionTitle}>Recent Application:</Text>
+        <FlatList
+          data={recentApplications}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          scrollEnabled={false}
+        />
+
+        {/* Past Applications */}
+        <Text style={styles.sectionTitle}>Past Application:</Text>
+        <FlatList
+          data={pastApplications}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          scrollEnabled={false}
+        />
+      </ScrollView>
+
+      <TouchableOpacity style={styles.applyButton} onPress={handleApplyLeave}>
+        <View style={styles.applyButtonGradient}>
+          <Text style={styles.applyButtonText}>Apply Leave</Text>
+        </View>
+      </TouchableOpacity>
+
+      <LeaveDetailPopup
+        visible={isPopupVisible}
+        onClose={handleClosePopup}
+        leave={selectedLeave}
+      />
+    </View>
+  );
 };
+
 
 const styles = StyleSheet.create({
     mainContainer: {

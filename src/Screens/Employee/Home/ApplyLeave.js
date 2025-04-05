@@ -1,148 +1,264 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
+  StyleSheet, 
+  Alert,
+  Modal,
+  TouchableWithoutFeedback,
+  Platform,
+  Image
+} from 'react-native';
 import { Color } from '../../../Constant/Constants';
+import { ApplyLeave } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const LeaveFormScreen = () => {
+  // Form states
+  const [leaveType, setLeaveType] = useState('EL');
+  const [subject, setSubject] = useState('');
+  const [reason, setReason] = useState('');
+  const [image, setImage] = useState(null);
+  
+  // Date states
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  
+  // UI states
+  const [showLeaveTypePicker, setShowLeaveTypePicker] = useState(false);
 
-  const handleApplyLeave = () => {
-    console.log('Leave applied!');
-    // Add your API call or form submission logic here
+  const handleApplyLeave = async () => {
+    if (!leaveType || !subject || !reason) {
+      Alert.alert("Validation", "Please fill all required fields.");
+      return;
+    }
+
+    if (startDate > endDate) {
+      Alert.alert("Validation", "End date cannot be before start date.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      
+      // Append all fields with correct field names
+      formData.append('leaveType', leaveType);
+      formData.append('subject', subject);
+      formData.append('reason', reason);
+      formData.append('startDate', startDate.toISOString().split('T')[0]);
+      formData.append('endDate', endDate.toISOString().split('T')[0]);
+      
+      if (image) {
+        formData.append('image', {
+          uri: image.uri,
+          type: image.type || 'image/jpeg',
+          name: image.fileName || `supporting_file_${Date.now()}.jpg`
+        });
+      }
+
+      const response = await ApplyLeave(formData);
+      console.log('Leave Applied Response:', response);
+      Alert.alert("Success", "Leave applied successfully!");
+      
+      // Reset form after successful submission
+      setSubject('');
+      setReason('');
+      setImage(null);
+    } catch (error) {
+      console.error('Error applying leave:', error);
+      Alert.alert("Error", "Failed to apply leave.");
+    }
+  };
+
+  const pickImage = async () => {
+    const options = {
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+    };
+
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        console.log('ImagePicker Error: ', response.error);
+      } else if (response.assets && response.assets.length > 0) {
+        const source = response.assets[0];
+        setImage({
+          uri: source.uri,
+          type: source.type,
+          fileName: source.fileName
+        });
+      }
+    });
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+  };
+
+  const onStartDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || startDate;
+    setShowStartDatePicker(Platform.OS === 'ios');
+    setStartDate(currentDate);
+  };
+
+  const onEndDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || endDate;
+    setShowEndDatePicker(Platform.OS === 'ios');
+    setEndDate(currentDate);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      
-      {/* Leave Count Section */}
-      <View style={styles.leaveCountContainer}>
-        <View style={styles.leaveCard}>
-          <Text style={styles.leaveTitle}>EL</Text>
-          <Text style={styles.leaveCount}>12</Text>
-          <Text style={styles.leaveLabel}>Earned Leave</Text>
-        </View>
-        <View style={styles.leaveCard}>
-          <Text style={styles.leaveTitle}>CL</Text>
-          <Text style={styles.leaveCount}>8</Text>
-          <Text style={styles.leaveLabel}>Casual Leave</Text>
-        </View>
-        <View style={styles.leaveCard}>
-          <Text style={styles.leaveTitle}>ML</Text>
-          <Text style={styles.leaveCount}>5</Text>
-          <Text style={styles.leaveLabel}>Medical Leave</Text>
-        </View>
-      </View>
-
       <Text style={styles.header}>Leave Application Form</Text>
       <Text style={styles.subHeader}>Please provide information about your leave.</Text>
 
       {/* Leave Type */}
-      <Text style={styles.label}>Leave Type</Text>
-      <TextInput 
-        placeholder="Choose leave type..." 
+      <Text style={styles.label}>Leave Type*</Text>
+      <TouchableOpacity 
         style={styles.input} 
-        placeholderTextColor="#888"
-      />
+        onPress={() => setShowLeaveTypePicker(true)}
+      >
+        <Text>{leaveType === 'EL' ? 'Earned Leave' : 
+               leaveType === 'CL' ? 'Casual Leave' : 
+               'Medical Leave'}</Text>
+      </TouchableOpacity>
+
+      {/* Leave Type Picker Modal */}
+      <Modal
+        visible={showLeaveTypePicker}
+        transparent={true}
+        animationType="slide"
+      >
+        <TouchableWithoutFeedback onPress={() => setShowLeaveTypePicker(false)}>
+          <View style={styles.modalOverlay} />
+        </TouchableWithoutFeedback>
+        
+        <View style={styles.modalContent}>
+          <Picker
+            selectedValue={leaveType}
+            onValueChange={(itemValue) => {
+              setLeaveType(itemValue);
+              setShowLeaveTypePicker(false);
+            }}
+          >
+            <Picker.Item label="Earned Leave (EL)" value="EL" />
+            <Picker.Item label="Casual Leave (CL)" value="CL" />
+            <Picker.Item label="Medical Leave (ML)" value="ML" />
+          </Picker>
+        </View>
+      </Modal>
 
       {/* Subject */}
-      <Text style={styles.label}>Subject</Text>
+      <Text style={styles.label}>Subject*</Text>
       <TextInput 
         placeholder="Enter subject..." 
-        style={styles.input} 
+        style={styles.input}
+        value={subject}
+        onChangeText={setSubject}
         placeholderTextColor="#888"
       />
 
-      {/* Select Date */}
-      <Text style={styles.label}>Select Date</Text>
-      <TextInput 
-        placeholder="Select leave date..." 
-        style={styles.input} 
-        placeholderTextColor="#888"
-      />
-
-      {/* Select Period */}
-      <Text style={styles.label}>Select Period</Text>
-      <TextInput 
-        placeholder="Period of leave..." 
-        style={styles.input} 
-        placeholderTextColor="#888"
-      />
-
-      {/* Description */}
-      <Text style={styles.label}>Description</Text>
-      <TextInput 
-        placeholder="Enter reason..." 
-        style={[styles.input, styles.textarea]} 
-        multiline 
-        placeholderTextColor="#888"
-      />
-
-      {/* Upload Section */}
-      <Text style={styles.label}>Upload File</Text>
-      <View style={styles.uploadContainer}>
-        <TextInput 
-          placeholder="Pdf, Png, Jpg files" 
-          style={styles.uploadInput} 
-          placeholderTextColor="#888"
-        />
-        <TouchableOpacity style={styles.uploadButton}>
-          <Text style={styles.uploadText}>Upload</Text>
-        </TouchableOpacity>
+      {/* Date Selection */}
+      <View style={styles.dateRow}>
+        <View style={styles.dateContainer}>
+          <Text style={styles.label}>Start Date*</Text>
+          <TouchableOpacity 
+            style={styles.input} 
+            onPress={() => setShowStartDatePicker(true)}
+          >
+            <Text>{formatDate(startDate)}</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.dateContainer}>
+          <Text style={styles.label}>End Date*</Text>
+          <TouchableOpacity 
+            style={styles.input} 
+            onPress={() => setShowEndDatePicker(true)}
+          >
+            <Text>{formatDate(endDate)}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Jobs Will Be Covered By */}
-      <Text style={styles.label}>Jobs Will Be Covered By</Text>
+      {/* Date Pickers */}
+      {showStartDatePicker && (
+        <DateTimePicker
+          value={startDate}
+          mode="date"
+          display="default"
+          onChange={onStartDateChange}
+          minimumDate={new Date()}
+        />
+      )}
+      
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={endDate}
+          mode="date"
+          display="default"
+          onChange={onEndDateChange}
+          minimumDate={startDate}
+        />
+      )}
+
+      {/* Reason */}
+      <Text style={styles.label}>Reason*</Text>
       <TextInput 
-        placeholder="Who will cover your work..." 
-        style={styles.input} 
+        placeholder="Enter reason for leave..." 
+        style={[styles.input, styles.textarea]} 
+        multiline 
+        numberOfLines={4}
+        value={reason}
+        onChangeText={setReason}
         placeholderTextColor="#888"
       />
 
-      {/* Apply Leave Button */}
-      <TouchableOpacity style={styles.button} onPress={handleApplyLeave}>
-        <Text style={styles.buttonText}>Submit</Text>
+      {/* Image Upload */}
+      <Text style={styles.label}>Supporting Document (Required)</Text>
+      <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+        <Text style={styles.uploadText}>Choose File</Text>
       </TouchableOpacity>
       
+      {image && (
+        <View style={styles.imagePreviewContainer}>
+          <Image 
+            source={{ uri: image.uri }} 
+            style={styles.imagePreview}
+          />
+          <TouchableOpacity 
+            style={styles.removeImageButton}
+            onPress={() => setImage(null)}
+          >
+            <Text style={styles.removeImageText}>×</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Submit Button */}
+      <TouchableOpacity style={styles.button} onPress={handleApplyLeave}>
+        <Text style={styles.buttonText}>Submit Leave Application</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
-
-export default LeaveFormScreen;
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
     backgroundColor: '#fff',
     flexGrow: 1,
-  },
-  leaveCountContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  leaveCard: {
-    flex: 1,
-    backgroundColor: "white", 
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: Color.primeBlue,
- 
-  },
-  leaveTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Color.primary,
-  },
-  leaveCount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginVertical: 5,
-  },
-  leaveLabel: {
-    fontSize: 12,
-    color: '#555',
+    paddingBottom: 40,
   },
   header: {
     fontSize: 22,
@@ -170,33 +286,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     fontSize: 14,
     color: '#333',
+    justifyContent: 'center',
   },
   textarea: {
     height: 100,
     textAlignVertical: 'top',
   },
-  uploadContainer: {
+  dateRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
   },
-  uploadInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginRight: 10,
-    backgroundColor: '#f9f9f9',
+  dateContainer: {
+    width: '48%',
   },
   uploadButton: {
     backgroundColor: Color.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 5,
+    borderWidth: 1,
+    borderColor: Color.primeBlue,
   },
   uploadText: {
-    color: '#fff',
+    color: Color.primeBlue,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -205,11 +319,51 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 30,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  imagePreviewContainer: {
+    marginTop: 15,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  imagePreview: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -10,
+    right: 30,
+    backgroundColor: 'red',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageText: {
+    color: 'white',
+    fontSize: 20,
+    lineHeight: 28,
+  },
 });
+
+export default LeaveFormScreen;

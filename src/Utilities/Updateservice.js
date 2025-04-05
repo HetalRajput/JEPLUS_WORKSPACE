@@ -5,6 +5,10 @@ import DeviceInfo from 'react-native-device-info';
 import RNFS from 'react-native-fs';
 import IntentLauncher, { IntentConstant } from 'react-native-intent-launcher';
 
+
+
+
+
 class UpdateService {
   static async checkForUpdate() {
     try {
@@ -13,16 +17,14 @@ class UpdateService {
       const currentBuildNumber = DeviceInfo.getBuildNumber();
       console.log(`Current Version: ${currentVersion}, Build: ${currentBuildNumber}`);
 
-      const response = await axios.get('http://14.99.115.213/DeliveryApp/AppUpdate/version.json?timestamp=${new Date().getTime()}', {
-        timeout: 15000,
-      });
+      const response = await axios.get('http://14.99.115.213/DeliveryApp/AppUpdate/version.json?timestamp=${new Date().getTime()}');
 
       if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = response.data;
-      console.log('Update data:', data);
+     
 
       const {
         versionName: latestVersion = '0.0.0',
@@ -86,19 +88,14 @@ class UpdateService {
 
   // Added second parameter progressCallback
  static async downloadAndInstallApk(apkUrl, size, progressCallback) {
-  console.log("this is apk file size>>>>>>>>>>>>>>",size);
+
   
   try {
     if (!apkUrl) {
       throw new Error('No APK URL provided');
     }
-
     console.log('Starting download...');
-    // Alert.alert('Downloading', 'Preparing update...');
-
-    // Hardcoded APK size (4.47 MB)
-    const totalBytes = 4000000;
-    console.log(`Using hardcoded file size: ${totalBytes} bytes`);
+    const totalBytes = size; // Hardcoded size for testing, replace with actual size if avail
 
     // Create download directory
     const downloadDir = `${RNFS.CachesDirectoryPath}/updates`;

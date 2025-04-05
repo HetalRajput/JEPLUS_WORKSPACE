@@ -177,56 +177,115 @@ export const Employeecheakinout = async (formData) => {
       };
     }
   };
+
+  
   export const GetLeave = async () => {
-    
-    const token = await getToken(); // Get token from AsyncStorage 
+    const token = await getToken();
   
     try {
       const response = await axios.get(`http://jemapps.in/api/employee/get-leave-history`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          Authorization: `Bearer ${token}`,
         }
       });
-  
-    console.log(response.data);
-    
+      console.log("this is salary data -->",response.data)
       return {
         success: true,
-        data: response.data,
-        message: 'Leave fetch successfully'
+        status: response.status,
+        data: response, // only the data part
       };
-    } catch (error) {
-      console.error('Error fetching Leave', error);
   
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return {
+          success: false,
+          status: 404,
+          message: 'No records found',
+        };
+      }
+        
       return {
         success: false,
+        status: error.response?.status || 500,
         message: error.message || 'Something went wrong',
       };
     }
   };
-  export const GetSalary = async () => {
-    
-    const token = await getToken(); // Get token from AsyncStorage 
+  export const ApplyLeave = async (formData) => {
+    console.log('FormData content:' ,formData);
+    // For debugging - log FormData entries
+ 
+
+    const token = await getToken();
   
     try {
-      const response = await axios.get(`https://jemapps.in/api/employee/get-salary-breakdown/2/2025`, {
+        const response = await axios.post(
+            `http://jemapps.in/api/employee/apply-leave`,
+            formData,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data', // Important for FormData
+                }
+            }
+        );
+        
+        console.log("Leave apply response:", response.data);
+        return {
+            success: true,
+            status: response.status,
+            data: response.data, // Return response.data instead of entire response
+        };
+
+    } catch (error) {
+        console.error("Leave apply error:", error);
+        
+        if (error.response && error.response.status === 404) {
+            return {
+                success: false,
+                status: 404,
+                message: 'No records found',
+            };
+        }
+        
+        return {
+            success: false,
+            status: error.response?.status || 500,
+            message: error.response?.data?.message || error.message || 'Something went wrong',
+        };
+    }
+};
+
+  export const GetSalary = async (month , year) => {
+    console.log("this is month and year -->",month , year);
+    
+    const token = await getToken();
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/get-salary-breakdown/${month}/${year}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // Add Bearer token to request headers
+          Authorization: `Bearer ${token}`,
         }
       });
-  
-    console.log(response.data);
-    
+      console.log("this is leave data -->",response.data)
       return {
         success: true,
-        data: response.data,
-        message: 'Salary fetch successfully'
+        status: response.status,
+        data: response.data, // only the data part
       };
-    } catch (error) {
-      console.error('Error fetching salary', error);
   
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return {
+          success: false,
+          status: 404,
+          message: 'No records found',
+        };
+      }
+        
       return {
         success: false,
+        status: error.response?.status || 500,
         message: error.message || 'Something went wrong',
       };
     }

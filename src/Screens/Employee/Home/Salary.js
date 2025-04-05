@@ -1,93 +1,149 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { PieChart } from 'react-native-chart-kit';
-import { Color } from '../../../Constant/Constants';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Color } from '../../../Constant/Constants';
 import { GetSalary } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
-
 const SalaryScreen = () => {
-  const [selectedYear, setSelectedYear] = useState('2024');
-  const [selectedMonth, setSelectedMonth] = useState('January');
+  // Month data with number mapping
+  const months = [
+    { id: 1, name: 'January' },
+    { id: 2, name: 'February' },
+    { id: 3, name: 'March' },
+    { id: 4, name: 'April' },
+    { id: 5, name: 'May' },
+    { id: 6, name: 'June' },
+    { id: 7, name: 'July' },
+    { id: 8, name: 'August' },
+    { id: 9, name: 'September' },
+    { id: 10, name: 'October' },
+    { id: 11, name: 'November' },
+    { id: 12, name: 'December' }
+  ];
 
-  const [salaryDat, setSalaryData] = useState([]);
+  // Years from 2025 to 2030
+  const years = Array.from({ length: 6 }, (_, i) => 2025 + i);
+
+  const [selectedYear, setSelectedYear] = useState(years[0].toString());
+  const [selectedMonth, setSelectedMonth] = useState('1'); // Default to January (1)
+  const [salaryData, setSalaryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
   const fetchSalaryData = async () => {
     try {
-      const response = await GetSalary();
-      console.log("salary data >>>>>>",response);
+      setLoading(true);
+      setError(null);
+      
+      // Pass month as number to API
+      const response = await GetSalary(parseInt(selectedMonth), selectedYear);
+      console.log("API Response:", response);
       
       if (response.success) {
-        setSalaryData(response.data);
-        setLoading(false);
+        const transformedData = transformSalaryData(response.data);
+        setSalaryData(transformedData);
       } else {
-        setError(response.message);
-        setLoading(false);
+        setError(response.message || 'Failed to fetch salary data');
       }
     } catch (error) {
-      setError('Failed to fetch salary data. Please try again later.');
+      console.error("Error fetching salary:", error);
+      setError('Network error. Please try again later.');
+    } finally {
       setLoading(false);
     }
   };
 
-  // Call the function to fetch salary data when the component mounts
-  React.useEffect(() => {
+  const transformSalaryData = (apiData) => {
+    return [
+      {
+        year: selectedYear,
+        month: months.find(m => m.id === parseInt(selectedMonth))?.name || 'Unknown',
+        basic: apiData.NetPayAmt || 0,
+        advance: apiData.AdvDedAmt || 0,
+        deduction: 0,
+        overtime: apiData.OTAmt || 0,
+        leaves: apiData.ADay || 0,
+        halfDays: apiData.hday || 0,
+        lateEntries: 0,
+        totalDays: apiData.TDay || 30,
+        department: apiData.Department,
+        position: apiData.Post,
+        employeeName: apiData.Name
+      }
+    ];
+  };
+
+  useEffect(() => {
     fetchSalaryData();
-  }, []);
+  }, [selectedMonth, selectedYear]);
 
-
-  const salaryData = [
-    { year: '2023', month: 'November', basic: 48000, advance: 4500, deduction: 1800, overtime: 2500, leaves: 3, halfDays: 2, lateEntries: 4, totalDays: 30 },
-    { year: '2023', month: 'December', basic: 48000, advance: 6000, deduction: 1500, overtime: 3000, leaves: 2, halfDays: 1, lateEntries: 2, totalDays: 31 },
-    { year: '2024', month: 'January', basic: 50000, advance: 5000, deduction: 2000, overtime: 3000, leaves: 2, halfDays: 1, lateEntries: 3, totalDays: 31 },
-    { year: '2024', month: 'February', basic: 50000, advance: 7000, deduction: 1000, overtime: 2000, leaves: 1, halfDays: 0, lateEntries: 2, totalDays: 28 },
-    { year: '2024', month: 'March', basic: 50000, advance: 0, deduction: 0, overtime: 5000, leaves: 0, halfDays: 0, lateEntries: 0, totalDays: 31 },
-    { year: '2024', month: 'April', basic: 50000, advance: 3000, deduction: 500, overtime: 1000, leaves: 2, halfDays: 1, lateEntries: 1, totalDays: 30 },
-  ];
-
-  const years = [...new Set(salaryData.map(item => item.year))];
-  const months = [...new Set(salaryData
-    .filter(item => item.year === selectedYear)
-    .map(item => item.month)
-  )];
-
-  const currentData = salaryData.find(item => 
-    item.year === selectedYear && item.month === selectedMonth
-  ) || salaryData[0];
+  const currentData = salaryData[0] || {
+    basic: 0,
+    advance: 0,
+    deduction: 0,
+    overtime: 0,
+    leaves: 0,
+    halfDays: 0,
+    lateEntries: 0,
+    totalDays: 0,
+    employeeName: '',
+    position: '',
+    department: ''
+  };
 
   const payableAmount = currentData.basic + currentData.overtime - currentData.advance - currentData.deduction;
   const balance = currentData.basic - currentData.advance;
 
-
   const handleViewPayslip = () => {
-    Alert.alert('Payslip', `Download payslip for ${selectedMonth} ${selectedYear}?`, [
+    const monthName = months.find(m => m.id === parseInt(selectedMonth))?.name || 'Unknown';
+    Alert.alert('Payslip', `Download payslip for ${monthName} ${selectedYear}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Download', onPress: () => console.log('Download initiated') },
     ]);
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Color.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={fetchSalaryData}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Employee Info */}
+      <View style={styles.employeeInfoContainer}>
+        <Text style={styles.employeeName}>{currentData.employeeName}</Text>
+        <Text style={styles.employeePosition}>{currentData.position}</Text>
+        <Text style={styles.employeeDepartment}>{currentData.department}</Text>
+      </View>
+
       {/* Year/Month Selector */}
       <View style={styles.pickerRow}>
         <View style={[styles.pickerContainer, { flex: 1, marginRight: 10 }]}>
           <Picker
             selectedValue={selectedYear}
-            onValueChange={(value) => {
-              setSelectedYear(value);
-              const newMonths = salaryData
-                .filter(item => item.year === value)
-                .map(item => item.month);
-              setSelectedMonth(newMonths[0]);
-            }}
+            onValueChange={setSelectedYear}
             dropdownIconColor={Color.primary}
           >
             {years.map(year => (
-              <Picker.Item key={year} label={year} value={year} />
+              <Picker.Item key={year} label={year.toString()} value={year.toString()} />
             ))}
           </Picker>
         </View>
@@ -99,7 +155,7 @@ const SalaryScreen = () => {
             dropdownIconColor={Color.primary}
           >
             {months.map(month => (
-              <Picker.Item key={month} label={month} value={month} />
+              <Picker.Item key={month.id} label={month.name} value={month.id.toString()} />
             ))}
           </Picker>
         </View>
@@ -120,23 +176,21 @@ const SalaryScreen = () => {
         </View>
       </View>
 
-
-
       {/* Attendance Details */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Attendance Details</Text>
         <View style={styles.attendanceGrid}>
           <View style={styles.attendanceItem}>
             <Text style={styles.attendanceValue}>{currentData.leaves}</Text>
-            <Text style={styles.attendanceLabel}>Leaves</Text>
+            <Text style={styles.attendanceLabel}>Absent Days</Text>
           </View>
           <View style={styles.attendanceItem}>
             <Text style={styles.attendanceValue}>{currentData.halfDays}</Text>
             <Text style={styles.attendanceLabel}>Half Days</Text>
           </View>
           <View style={styles.attendanceItem}>
-            <Text style={styles.attendanceValue}>{currentData.lateEntries}</Text>
-            <Text style={styles.attendanceLabel}>Late Entries</Text>
+            <Text style={styles.attendanceValue}>{currentData.totalDays - currentData.leaves}</Text>
+            <Text style={styles.attendanceLabel}>Present Days</Text>
           </View>
           <View style={styles.attendanceItem}>
             <Text style={styles.attendanceValue}>{currentData.totalDays}</Text>
@@ -184,6 +238,55 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Color.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  employeeInfoContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    alignItems: 'center',
+  },
+  employeeName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Color.primedarkblue,
+    marginBottom: 4,
+  },
+  employeePosition: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 4,
+  },
+  employeeDepartment: {
+    fontSize: 14,
+    color: '#888',
+  },
   pickerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -218,19 +321,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  chartWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
   sectionContainer: {
     backgroundColor: 'white',
     borderRadius: 10,
@@ -243,32 +333,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Color.primedarkblue,
     marginBottom: 15,
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 15,
-    gap: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  legendText: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '500',
   },
   breakdownRow: {
     flexDirection: 'row',
