@@ -12,63 +12,17 @@ import {
   Dimensions,
 } from "react-native";
 import { getCurrentLocation } from "./GetCurrentlocarion";
+import ImagePicker from "react-native-image-crop-picker";
 import { CollectionPay } from "../../Constant/Api/Collectionapi/Apiendpoint";
-import { Camera, useCameraDevice } from 'react-native-vision-camera';
-
+import { CameraComponent } from "./CameraComponent";
 const { height, width } = Dimensions.get("window");
-
-const CameraComponent = ({ onPhotoTaken, onClose }) => {
-  const camera = useRef(null);
-  const device = useCameraDevice('back');
-
-  const takePhoto = async () => {
-    try {
-      if (camera.current) {
-        const photo = await camera.current.takePhoto({
-          qualityPrioritization: 'quality',
-          flash: 'off',
-        });
-        onPhotoTaken(photo.path);
-      }
-    } catch (error) {
-      console.error("Error taking photo:", error);
-    }
-  };
-
-  if (!device) return <View style={styles.cameraErrorContainer}><Text>Camera device not found</Text></View>;
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <Camera
-        ref={camera}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-        photo={true}
-      />
-      <View style={styles.cameraControls}>
-        <TouchableOpacity
-          style={styles.captureButton}
-          onPress={takePhoto}
-        />
-        <TouchableOpacity
-          style={styles.closeCameraButton}
-          onPress={onClose}
-        >
-          <Text style={styles.closeCameraText}>X</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
 
 export const UncollectionButton = ({ navigation, selectedInvoices }) => {
   const [selectedReason, setSelectedReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const slideAnim = useRef(new Animated.Value(height)).current;
+  const slideAnim = useRef(new Animated.Value(height)).current; // Start from bottom
 
   const reasons = [
     "Customer not available",
@@ -77,6 +31,7 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
     "Other reason",
   ];
 
+  // Set the first reason as default when the component mounts
   useEffect(() => {
     setSelectedReason(reasons[0]);
   }, []);
@@ -84,7 +39,7 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
   const openModal = () => {
     setIsModalVisible(true);
     Animated.timing(slideAnim, {
-      toValue: 0,
+      toValue: 0, // Slide up to the top
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -92,15 +47,10 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
 
   const closeModal = () => {
     Animated.timing(slideAnim, {
-      toValue: height,
+      toValue: height, // Slide down to the bottom
       duration: 300,
       useNativeDriver: true,
     }).start(() => setIsModalVisible(false));
-  };
-
-  const handlePhotoTaken = (photoPath) => {
-    setPhoto(photoPath);
-    setShowCamera(false);
   };
 
   const handleSubmitPayment = async () => {
@@ -111,25 +61,29 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
 
       const payload = new FormData();
 
+      // Add image as a file
       if (photo) {
         payload.append("image", {
-          uri: 'file://' + photo,
-          name: "undelivered_photo.jpg",
-          type: "image/jpeg",
+          uri: photo,
+          name: "undelivered_photo.jpg", // Set a filename
+          type: "image/jpeg", // Set the MIME type
         });
       }
 
+      // Add lat and long as separate fields
       payload.append("lat", String(location.latitude || "0.0"));
       payload.append("long", String(location.longitude || "0.0"));
 
+      // Extract invoiceNo and tagNo from selectedInvoices
       const invoicesData = selectedInvoices.map((invoice) => ({
-        vno: String(invoice.invoiceNo),
-        tagno: String(invoice.tagNo),
-        amount: null,
+        vno: String(invoice.invoiceNo), // Use invoiceNo as vno
+        tagno: String(invoice.tagNo), // Use tagNo as tagno
+        amount: null, // Set amount to null as per requirement
         paymethod: "uncollected",
         CollBoyRemarks: selectedReason || "Item not collected",
       }));
 
+      // Add invoices as a JSON string
       payload.append("data", JSON.stringify(invoicesData));
 
       const response = await CollectionPay(payload);
@@ -148,38 +102,22 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
     }
   };
 
-  const requestCameraPermission = async () => {
-    try {
-      const cameraPermission = await Camera.requestCameraPermission();
-      if (cameraPermission !== 'granted') {
-        Alert.alert('Permission required', 'Camera permission is needed to take photos');
-        return false;
-      }
-      return true;
-    } catch (err) {
-      console.warn(err);
-      return false;
-    }
-  };
-
   const capturePhoto = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (hasPermission) {
-      setShowCamera(true);
+    try {
+      const image = await ImagePicker.openCamera({
+        width: 300,
+        height: 400,
+        cropping: true,
+      });
+      setPhoto(image.path);
+    } catch (error) {
+      console.error("Error capturing photo:", error);
     }
   };
-
-  if (showCamera) {
-    return (
-      <CameraComponent 
-        onPhotoTaken={handlePhotoTaken} 
-        onClose={() => setShowCamera(false)} 
-      />
-    );
-  }
 
   return (
     <View>
+      {/* Modal for reason selection, photo capture, and confirmation */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -220,8 +158,8 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
             </TouchableOpacity>
             {photo && (
               <Image
-                source={{ uri: 'file://' + photo }}
-                style={styles.photoPreview}
+                source={{ uri: photo }}
+                style={styles.photoPreview} // Increased image size
               />
             )}
             <View style={styles.modalButtons}>
@@ -243,6 +181,7 @@ export const UncollectionButton = ({ navigation, selectedInvoices }) => {
         </View>
       </Modal>
 
+      {/* Uncollected Button */}
       <TouchableOpacity
         style={styles.button}
         onPress={openModal}
@@ -272,7 +211,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: height * 0.8,
+    maxHeight: height * 0.8, // Limit height to 80% of the screen
   },
   modalTitle: {
     fontSize: 18,
@@ -303,8 +242,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   photoPreview: {
-    width: width * 0.8,
-    height: width * 0.8,
+    width: width * 0.8, // 80% of screen width
+    height: width * 0.8, // Square image with same width and height
     marginTop: 10,
     alignSelf: "center",
     borderRadius: 10,
@@ -341,42 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  cameraControls: {
-    position: 'absolute',
-    bottom: 40,
-    width: '100%',
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'white',
-    borderWidth: 5,
-    borderColor: '#ddd',
-  },
-  closeCameraButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeCameraText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  cameraErrorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'black',
-  },
 });
 
-export default UncollectionButton;
+export default UncollectionButton; 
