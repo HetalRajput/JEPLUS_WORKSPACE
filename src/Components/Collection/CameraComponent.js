@@ -16,7 +16,7 @@ export const CameraComponent = ({ onCapture, onClose }) => {
           flash: 'off',
           skipMetadata: true,
           enableShutterSound: false,
-          quality: 0.5, // Lower quality to further reduce size
+          quality: 0.9, // Lower quality to further reduce size
           maxWidth: 800,
           maxHeight: 1200,
           pixelFormat: 'yuv',
