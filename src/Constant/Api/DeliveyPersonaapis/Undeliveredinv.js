@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,17 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCurrentLocation } from "../../../Components/Delivery/GetCurrentlocarion";
-import ImagePicker from "react-native-image-crop-picker";
+import { Camera, useCameraDevice } from "react-native-vision-camera";
+import { launchImageLibrary } from "react-native-image-picker";
 
 export const UndeliveredButton = ({ item, navigation }) => {
   const [selectedReason, setSelectedReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const cameraRef = useRef(null);
+  const device = useCameraDevice('back');
 
   const reasons = [
     "Customer not available",
@@ -26,6 +30,16 @@ export const UndeliveredButton = ({ item, navigation }) => {
     "Product damaged",
     "Other reason",
   ];
+
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      const cameraPermission = await Camera.getCameraPermissionStatus();
+      if (cameraPermission !== 'granted') {
+        await Camera.requestCameraPermission();
+      }
+    };
+    checkCameraPermission();
+  }, []);
 
   const getToken = async () => {
     try {
@@ -62,7 +76,7 @@ export const UndeliveredButton = ({ item, navigation }) => {
       formData.append("Long", String(location.longitude || "0.0"));
 
       if (photo) {
-        formData.append("image1", {
+        formData.append("image2", {
           uri: photo,
           type: "image/jpeg",
           name: "undelivered_photo.jpg",
@@ -90,21 +104,61 @@ export const UndeliveredButton = ({ item, navigation }) => {
     }
   };
 
+  const takePhoto = async () => {
+    setShowCamera(true);
+  };
+
   const capturePhoto = async () => {
-    try {
-      const image = await ImagePicker.openCamera({
-        width: 300,
-        height: 400,
-        cropping: true,
-      });
-      setPhoto(image.path);
-    } catch (error) {
-      console.error("Error capturing photo:", error);
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePhoto({
+          qualityPrioritization: 'quality',
+          flash: 'off',
+        });
+        setPhoto(`file://${photo.path}`);
+        setShowCamera(false);
+      } catch (error) {
+        console.error("Error taking photo:", error);
+      }
     }
+  };
+
+
+
+  const closeCamera = () => {
+    setShowCamera(false);
   };
 
   return (
     <View>
+      {/* Camera View */}
+      {showCamera && device && (
+        <Modal
+          visible={showCamera}
+          transparent
+          animationType="slide"
+          onRequestClose={closeCamera}
+        >
+          <View style={styles.cameraContainer}>
+            <Camera
+              ref={cameraRef}
+              style={StyleSheet.absoluteFill}
+              device={device}
+              isActive={showCamera}
+              photo={true}
+            />
+            <View style={styles.cameraControls}>
+              <TouchableOpacity style={styles.captureButton} onPress={capturePhoto}>
+                <View style={styles.captureButtonInner} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeButton} onPress={closeCamera}>
+                <Text style={styles.closeButtonText}>X</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       {/* Modal for reason selection, photo capture, and confirmation */}
       <Modal
         visible={isModalVisible}
@@ -129,9 +183,9 @@ export const UndeliveredButton = ({ item, navigation }) => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <TouchableOpacity style={styles.photoButton} onPress={capturePhoto}>
+            <TouchableOpacity style={styles.photoButton} onPress={takePhoto}>
               <Text style={styles.photoButtonText}>
-                {photo ? "Retake Photo" : "Capture Photo"}
+                {photo ? "Retake Photo" : "Take Photo"}
               </Text>
             </TouchableOpacity>
             {photo && (
@@ -174,12 +228,52 @@ export const UndeliveredButton = ({ item, navigation }) => {
 
 const styles = StyleSheet.create({
   button: {
-
+    // Your button styles
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 40,
+    width: '100%',
+    alignItems: 'center',
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
@@ -216,6 +310,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 10,
     backgroundColor: "#FF5733",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  galleryButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: "#4CAF50",
     borderRadius: 8,
     alignItems: "center",
   },

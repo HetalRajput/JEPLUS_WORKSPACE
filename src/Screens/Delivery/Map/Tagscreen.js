@@ -15,7 +15,6 @@ import { Color } from '../../../Constant/Constants';
 import { gettaginfo } from '../../../Constant/Api/DeliveyPersonaapis/Mapendpoint';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
-import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import FastImage from 'react-native-fast-image';
 
 const { width, height } = Dimensions.get('window');
@@ -110,7 +109,7 @@ const TagCardScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <NoInternetPopup />
+ 
 
       {/* Header with GIF */}
       <View style={styles.header}>

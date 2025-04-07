@@ -56,7 +56,7 @@ export const CashPayCard = ({ selectedInvoices, navigation, totalOSAmount, tagNo
     try {
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.5,
+        quality: 0.8,
         maxWidth: 1080,
         maxHeight: 1920,
       });

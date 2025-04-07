@@ -5,7 +5,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import { Color } from '../../Constant/Constants';
 import { useAuth } from '../../Constant/Api/Authcontext';
-import NoInternetPopup from '../../Components/Other/Nointernetpopup';
 import LoginfailPopup from '../../Components/Other/Loginfail';
 
 const OTPVerificationScreen = ({ navigation }) => {
@@ -95,7 +94,7 @@ const OTPVerificationScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <NoInternetPopup />
+
 
       <View style={styles.logoContainer}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>

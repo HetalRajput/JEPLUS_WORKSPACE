@@ -6,9 +6,6 @@ import RNFS from 'react-native-fs';
 import IntentLauncher, { IntentConstant } from 'react-native-intent-launcher';
 
 
-
-
-
 class UpdateService {
   static async checkForUpdate() {
     try {

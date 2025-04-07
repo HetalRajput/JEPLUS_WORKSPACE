@@ -19,7 +19,6 @@ import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
 import { getUserInfo } from '../../../Constant/Api/DeliveyPersonaapis/Homeendpoint';
-import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import { getCurrentLocation, getDistanceManual } from '../../../Components/Delivery/GetCurrentlocarion';
 import { PunchInOut } from '../../../Constant/Api/DeliveyPersonaapis/InOutendpoint';
 import { Summery } from '../../../Constant/Api/DeliveyPersonaapis/Summeryendpoint';
@@ -241,7 +240,7 @@ const DashboardScreen = ({ navigation }) => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <NoInternetPopup />
+
 
       {/* Header Section */}
       <View style={styles.header}>

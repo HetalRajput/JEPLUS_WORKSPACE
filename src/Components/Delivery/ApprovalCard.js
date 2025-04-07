@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,17 +12,17 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { RadioButton } from "react-native-paper";
 import { Color } from "../../Constant/Constants";
 import { Pay } from "../../Constant/Api/DeliveyPersonaapis/Delivered";
 import { getCurrentLocation } from "./GetCurrentlocarion";
 import { UndeliveredButton } from "../../Constant/Api/DeliveyPersonaapis/Undeliveredinv";
 import { Picker } from '@react-native-picker/picker';
-import ImagePicker from "react-native-image-crop-picker";
+import { Camera, useCameraDevice } from "react-native-vision-camera";
+import { launchImageLibrary } from "react-native-image-picker";
 import { Sendotp } from "../../Constant/Api/DeliveyPersonaapis/Mapendpoint";
 import { Verifyotp } from "../../Constant/Api/DeliveyPersonaapis/Mapendpoint";
 
-// Reusable Components
+// Reusable Components (keep these the same as before)
 const Dropdown = ({ label, selectedValue, onValueChange, items, disabled }) => (
   <View style={styles.dropdownContainer}>
     <Text style={styles.label}>{label}</Text>
@@ -30,7 +30,7 @@ const Dropdown = ({ label, selectedValue, onValueChange, items, disabled }) => (
       selectedValue={selectedValue}
       onValueChange={onValueChange}
       style={styles.picker}
-      enabled={!disabled} // Disable the Picker when disabled is true
+      enabled={!disabled}
     >
       <Picker.Item label="Select a person" value="" />
       {items.map((item) => (
@@ -90,8 +90,64 @@ const ErrorModal = ({ visible, message, onClose }) => (
   </Modal>
 );
 
+const CameraModal = ({ visible, onClose, onPhotoTaken }) => {
+  const cameraRef = useRef(null);
+  const device = useCameraDevice('back');
+  const [showCamera, setShowCamera] = useState(false);
+
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      const cameraPermission = await Camera.getCameraPermissionStatus();
+      if (cameraPermission !== 'granted') {
+        await Camera.requestCameraPermission();
+      }
+      setShowCamera(true);
+    };
+    checkCameraPermission();
+  }, []);
+
+  const takePhoto = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePhoto({
+          qualityPrioritization: 'quality',
+          flash: 'off',
+        });
+        onPhotoTaken(`file://${photo.path}`);
+        onClose();
+      } catch (error) {
+        console.error("Error taking photo:", error);
+        Alert.alert("Error", "Failed to capture photo");
+      }
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.cameraModalContainer}>
+        {device && showCamera && (
+          <Camera
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive={visible}
+            photo={true}
+          />
+        )}
+        <View style={styles.cameraControls}>
+          <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.closeCameraButton} onPress={onClose}>
+            <Icon name="close" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export const ApprovalCard = ({ item, navigation }) => {
-  
   const [amount, setAmount] = useState(item.amount || "00");
   const [invoicePhoto, setInvoicePhoto] = useState(null);
   const [selectedReason, setSelectedReason] = useState("");
@@ -105,9 +161,7 @@ export const ApprovalCard = ({ item, navigation }) => {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
-
-
-   
+  const [showCameraModal, setShowCameraModal] = useState(false);
 
   const persons = [
     { id: "2", name: "ROHIT JHA" },
@@ -119,11 +173,8 @@ export const ApprovalCard = ({ item, navigation }) => {
       Alert.alert("Error", "Please select a person.");
       return;
     }
-
     
     const response = await Sendotp(item.acno,selectedPerson);
-    
- 
     
     if (response.success) {
       Alert.alert("Success", `OTP sent to ${selectedPerson}`)
@@ -133,8 +184,6 @@ export const ApprovalCard = ({ item, navigation }) => {
     else{
       Alert.alert("Error", "Failed to send OTP. Please try again.",response.message);
     }
- 
-    ;
   };
 
   const verifyOtp = async () => {
@@ -153,8 +202,6 @@ export const ApprovalCard = ({ item, navigation }) => {
       Alert.alert("Error", "An unexpected error occurred. Please try again.");
     }
   };
-  
-
 
   const handlePayment = async () => {
     if (!otpVerified) {
@@ -176,7 +223,6 @@ export const ApprovalCard = ({ item, navigation }) => {
     try {
       const location = await getCurrentLocation();
     
-
       const formData = new FormData();
       formData.append("Vno", item.id);
       formData.append("Acno", item.acno);
@@ -190,7 +236,7 @@ export const ApprovalCard = ({ item, navigation }) => {
       formData.append("Lat", location.latitude || "0.0");
       formData.append("Long", location.longitude || "0.0");
       if (invoicePhoto) {
-        formData.append("image1", {
+        formData.append("image2", {
           uri: invoicePhoto,
           type: "image/jpeg",
           name: "invoice_payment.jpg",
@@ -233,39 +279,24 @@ export const ApprovalCard = ({ item, navigation }) => {
     setErrorModalVisible(false);
   };
 
-  const pickImage = async (setPhoto) => {
+  const pickImageFromGallery = async () => {
     try {
-      const image = await ImagePicker.openCamera({
-        width: 300,
-        height: 400,
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 1,
       });
-      setPhoto(image.path);
+      
+      if (!result.didCancel && result.assets && result.assets.length > 0) {
+        setInvoicePhoto(result.assets[0].uri);
+      }
     } catch (error) {
-      console.error("Error selecting image:", error.message);
+      console.error("Error selecting from gallery:", error);
+      Alert.alert("Error", "Failed to select image from gallery");
     }
   };
 
-  const pickImageFromGallery = async (setPhoto) => {
-    try {
-      const image = await ImagePicker.openPicker({
-        width: 300,
-        height: 400,
-        mediaType: 'photo',
-      });
-      const allowedFormats = ['jpg', 'jpeg', 'png'];
-      const fileExtension = image.path.split('.').pop().toLowerCase();
-      if (allowedFormats.includes(fileExtension)) {
-        setPhoto(image.path);
-      } else {
-        Alert.alert("Error", "Invalid file format. Please select a JPEG or PNG image.");
-      }
-    } catch (error) {
-      if (error.code === 'E_PICKER_CANCELLED') {
-        console.log("User cancelled image selection");
-      } else {
-        console.error("Error selecting image from gallery:", error.message);
-      }
-    }
+  const handlePhotoTaken = (photoUri) => {
+    setInvoicePhoto(photoUri);
   };
 
   return (
@@ -279,7 +310,7 @@ export const ApprovalCard = ({ item, navigation }) => {
           selectedValue={selectedPerson}
           onValueChange={setSelectedPerson}
           items={persons}
-          disabled={otpVerified} // Disable the Dropdown after OTP is verified
+          disabled={otpVerified}
         />
 
         {!otpSent && (
@@ -294,13 +325,13 @@ export const ApprovalCard = ({ item, navigation }) => {
 
         <View style={styles.buttonRow}>
           <ImagePickerButton
-            onPress={() => pickImage(setInvoicePhoto)}
+            onPress={() => setShowCameraModal(true)}
             iconName="camera"
             label="Capture Invoice Photo"
-            style={[styles.captureButton1, styles.flexButton,styles.buttonText]}
+            style={[styles.captureButton1, styles.flexButton, styles.buttonText]}
           />
           <ImagePickerButton
-            onPress={() => pickImageFromGallery(setInvoicePhoto)}
+            onPress={pickImageFromGallery}
             iconName="image"
             style={styles.captureButton2}
           />
@@ -337,199 +368,332 @@ export const ApprovalCard = ({ item, navigation }) => {
         </View>
       </View>
 
+      <CameraModal
+        visible={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onPhotoTaken={handlePhotoTaken}
+      />
+
       <SuccessModal visible={successModal} onClose={handleok} />
       <ErrorModal visible={errorModalVisible} message={missingData} onClose={handleErrorModalClose} />
     </ScrollView>
   );
 };
 
+
+
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
+    backgroundColor: '#f8f9fa', // Light background for the container
   },
   card: {
     backgroundColor: "white",
-    padding: 20,
-    borderRadius: 15,
+    padding: 24,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 8,
+    elevation: 6,
+    marginVertical: 16,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#f0f0f0', // subtle border
+  },
+  cameraModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+  },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 50,
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  captureButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
     shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 4,
-    marginVertical: 15,
-    marginHorizontal: 10,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  closeCameraButton: {
+    position: 'absolute',
+    top: 50,
+    right: 25,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "700",
     marginBottom: 8,
-    color: "#333",
+    color: "#2c3e50",
   },
   description: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 15,
+    fontSize: 15,
+    color: "#7f8c8d",
+    marginBottom: 20,
+    lineHeight: 22,
   },
   dropdownContainer: {
-    marginBottom: 15,
-    
+    marginBottom: 20,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#444",
-
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 8,
+    color: "#34495e",
   },
   picker: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    backgroundColor: "#f9f9f9",
+    borderWidth: 1.5,
+    borderColor: "#e0e0e0",
+    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    padding: 8,
+    fontSize: 16,
+    color: '#2c3e50',
   },
   sendOtpButton: {
     backgroundColor: Color.primeBlue,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 20,
+    shadowColor: Color.primeBlue,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   otpContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 20,
   },
   otpInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#e0e0e0",
+    borderRadius: 14,
     padding: 8,
     fontSize: 16,
-    backgroundColor: "#f9f9f9",
-    marginRight: 10,
+    backgroundColor: "#ffffff",
+    marginRight: 12,
+    color: '#2c3e50',
   },
   verifyOtpButton: {
-    backgroundColor: Color.primeBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    shadowColor: '#3498db',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: 24,
+    gap: 12,
   },
   undeliveredButton: {
     backgroundColor: "#e74c3c",
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 14,
     flex: 1,
     alignItems: "center",
-    marginRight: 10,
+    justifyContent: 'center',
+    shadowColor: '#e74c3c',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   deliveredButton: {
     backgroundColor: "#2ecc71",
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 14,
     flex: 1,
     alignItems: "center",
+    justifyContent: 'center',
+    shadowColor: '#2ecc71',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
-  DeliveredText:{
+  DeliveredText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
-
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 24,
   },
   modalContent: {
     backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 16,
     alignItems: "center",
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 10,
   },
   modalText: {
-    fontSize: 16,
-    marginVertical: 10,
+    fontSize: 17,
+    marginVertical: 16,
+    color: "#2c3e50",
+    textAlign: 'center',
+    lineHeight: 24,
   },
   okButton: {
     backgroundColor: Color.primeBlue,
-    paddingHorizontal: 50,
-    borderRadius: 8,
-    paddingVertical: 10,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    paddingVertical: 14,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: Color.primeBlue,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   okButtonText: {
     color: "white",
+    fontSize: 16,
+    fontWeight: '600',
   },
   buttonText: {
     color: "white",
-    fontSize: 14,
-    
+    fontSize: 15,
+    fontWeight: '600',
+
   },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderRadius: 10,
-    borderWidth:1,
-    borderColor:Color.primeBlue,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Color.primeBlue,
     backgroundColor: Color.primeBlue,
-    marginBottom: 10
+    marginBottom: 16,
+    overflow: 'hidden',
+    shadowColor: Color.primeBlue,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
+    justifyContent:"center"
   },
   buttonRow1: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderRadius: 10,
-    backgroundColor:Color.primeBlue,
-    marginBottom: 10
+    borderRadius: 14,
+    backgroundColor: Color.primeBlue,
+    marginBottom: 16,
+    shadowColor: Color.primeBlue,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   flexButton: {
     flex: 1,
-
   },
   previewImage: {
     width: "100%",
     height: 250,
-    borderRadius: 12,
-    marginBottom: 10,
+    borderRadius: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
   },
-  captureButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Color.primeBlue,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 15,
-  },
-
   captureButton1: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderColor: Color.primeBlue,
-    paddingVertical: 12,
+    backgroundColor: Color.primeBlue,
+    paddingVertical: 5,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: Color.primeBlue,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 5,
   },
   captureButton2: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderColor: Color.primeBlue,
-    paddingVertical: 12,
+    paddingVertical: 5,
     backgroundColor: "white",
     paddingHorizontal: 20,
-    borderRadius: 9
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
   closeButton: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
-    borderRadius: 15,
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

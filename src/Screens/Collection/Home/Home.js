@@ -18,7 +18,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import { Color } from '../../../Constant/Constants';
 import SliderBox from '../../../Components/Other/Sliderbox';
-import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 import LinearGradient from 'react-native-linear-gradient';
 import { CollectionSummery, Getuser } from '../../../Constant/Api/Collectionapi/Apiendpoint';
 import ComplainTab from '../../../Components/Collection/CompainTab';
@@ -46,6 +45,7 @@ const DashboardScreen = ({ navigation }) => {
   const [showCamera, setShowCamera] = useState(false);
   const device = useCameraDevice('back');
   const cameraRef = useRef(null);
+console.log(distance);
 
   // Fetch summary data
   const fetchSummery = async () => {
@@ -274,7 +274,6 @@ const DashboardScreen = ({ navigation }) => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <NoInternetPopup />
 
       {/* Header Section */}
       <View style={styles.header}>

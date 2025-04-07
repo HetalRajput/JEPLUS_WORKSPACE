@@ -6,7 +6,6 @@ import { Color } from '../../../Constant/Constants';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { FAB } from 'react-native-paper'; // Import FAB from react-native-paper
 import OrderPopup from '../../../Components/Collection/Orderpopup';
-import NoInternetPopup from '../../../Components/Other/Nointernetpopup';
 
 
 const CartProductItem = ({ item, disabled, onPress, handleIncreaseQuantity, handleDecreaseQuantity, quantity, onRemove }) => {
@@ -134,7 +133,6 @@ const OrderScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <NoInternetPopup />
       <View style={styles.header}>
         <Text style={styles.headerText}>Shopping Cart</Text>
       </View>

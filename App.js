@@ -5,7 +5,7 @@ import AppNavigator from './src/Navigation/AppNavigator';
 import { AuthProvider } from './src/Constant/Api/Authcontext';
 import UpdateService from './src/Utilities/Updateservice';
 import UpdateModal from './src/Components/Other/Updatemodal';
-import axios from 'axios';
+import NoInternetPopup from './src/Components/Other/Nointernetpopup';
 const App = () => {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [checkingUpdate, setCheckingUpdate] = useState(true);
@@ -92,6 +92,7 @@ console.log("Update Info:", updateInfo);
     <AuthProvider>
       <RecoilRoot>
         <StatusBar backgroundColor="#1568ab" barStyle="light-content" />
+        <NoInternetPopup/>
         <AppNavigator />
         <UpdateModal
           visible={updateInfo?.updateAvailable || false}
