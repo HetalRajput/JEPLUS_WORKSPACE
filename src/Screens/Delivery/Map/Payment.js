@@ -20,6 +20,8 @@ import { ApprovalCard } from "../../../Components/Delivery/ApprovalCard";
 
 const CustomerInfoScreen = ({ route, navigation }) => {
   const { invoice } = route.params;
+  console.log(invoice, "invoice data from route params");
+  
   const [selectedPayment, setSelectedPayment] = useState("cash");
   const [isApproved, setIsApproved] = useState(false);
 

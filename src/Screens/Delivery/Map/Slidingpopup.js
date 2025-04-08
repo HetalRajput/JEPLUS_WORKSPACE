@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { Checkbox } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
 import { Color } from '../../../Constant/Constants';
@@ -19,30 +20,16 @@ const { height, width } = Dimensions.get('window');
 const MINIMUM_HEIGHT = 0;
 const MID_SCREEN_HEIGHT = height / 1.28;
 const SNAP_POINTS = [MINIMUM_HEIGHT, MID_SCREEN_HEIGHT];
-    
 
 const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
   const translateY = useRef(new Animated.Value(SNAP_POINTS[0])).current;
   const lastGestureValue = useRef(SNAP_POINTS[0]);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-   
-  // const checkInvoicesStatus = (invoicesList) => {
-  //   const allDeliveredOrUndelivered = invoicesList.every(
-  //     (item) => item.delStatus === "Delivered" || item.delStatus === "Failed"
-  //   );
-  
-  //   if (allDeliveredOrUndelivered) {
-  //     navigation.navigation('Map');
-  //   }
-  // };
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
-
-
-
-  // Function to fetch invoices
   const fetchSelectedInvoice = async () => {
-    
     try {
       setLoading(true);
       const response = await getSelectdInvoice();
@@ -60,12 +47,10 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
           sman: item.sman,
         }));
 
-        // Sorting: Pending first, then Delivered & Failed
         formattedInvoices.sort((a, b) => {
           const statusOrder = { Pending: 0, Delivered: 1, Failed: 2 };
           return statusOrder[a.delStatus] - statusOrder[b.delStatus];
         });
-        // checkInvoicesStatus(formattedInvoices);
         setInvoices(formattedInvoices);
       }
     } catch (error) {
@@ -99,11 +84,38 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     })
   ).current;
 
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (!isSelectMode) {
+      setSelectedInvoices([]);
+    }
+  };
+
+  const toggleInvoiceSelection = (invoiceId) => {
+    setSelectedInvoices(prev => {
+      if (prev.includes(invoiceId)) {
+        return prev.filter(id => id !== invoiceId);
+      } else {
+        return [...prev, invoiceId];
+      }
+    });
+  };
+
+  const handleMultipleDelivery = () => {
+    // Implement your multiple delivery logic here
+    console.log('Selected invoices for delivery:', selectedInvoices);
+    // After delivery, you might want to:
+    // setIsSelectMode(false);
+    // setSelectedInvoices([]);
+    // fetchSelectedInvoice(); // Refresh the list
+  };
+
   const renderInvoice = ({ item, index }) => {
     const isCompleted = item.delStatus === 'Failed';
     const isDelivered = item.delStatus === 'Delivered';
     const isPending = item.delStatus === 'Pending';
     const isLastItem = index === invoices.length - 1;
+    const isSelected = selectedInvoices.includes(item.id);
 
     return (
       <TouchableOpacity
@@ -113,10 +125,25 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
           isDelivered && styles.deliveredInvoice,
           isPending && styles.pendingInvoice,
           isLastItem && styles.lastCardMargin,
+          isSelected && styles.selectedInvoice,
         ]}
-        onPress={() => !isCompleted && !isDelivered && navigation.navigate('Payment', { invoice: item })}
-        disabled={isCompleted || isDelivered}
+        onPress={() => {
+          if (isSelectMode) {
+            toggleInvoiceSelection(item.id);
+          } else if (!isCompleted && !isDelivered) {
+            navigation.navigate('Payment', { invoice: item });
+          }
+        }}
+        disabled={(isCompleted || isDelivered) && !isSelectMode}
       >
+        {isSelectMode && (
+          <Checkbox
+            status={isSelected ? 'checked' : 'unchecked'}
+            onPress={() => toggleInvoiceSelection(item.id)}
+            color={Color.primeBlue}
+            uncheckedColor={Color.primeBlue}
+          />
+        )}
         <View style={styles.invoiceDetails}>
           <View style={styles.cardHeader}>
             <Icon name="business-outline" size={24} color={Color.primeBlue} />
@@ -136,17 +163,12 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
                   {item.delStatus === "Failed" ? "Undelivered" : item.delStatus}
                 </Text>
               </View>
-
-
             </View>
-
             <Text style={styles.detailText}>🧾 {item.id}</Text>
           </View>
           <Text style={styles.amountText}>💰 ₹{item.amount}</Text>
 
-
-
-          {!isCompleted && !isDelivered && item.pickedStatus !== 'Picked' && (
+          {!isSelectMode && !isCompleted && !isDelivered && item.pickedStatus !== 'Picked' && (
             <TouchableOpacity style={styles.pickUpButton} onPress={() => handlePickUp(item.id)}>
               <Text style={styles.buttonText}>🚚 Pick Up</Text>
             </TouchableOpacity>
@@ -162,6 +184,23 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     <Animated.View style={[styles.popup, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
       <View style={styles.header}>
         <View style={styles.handle} />
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={toggleSelectMode} style={styles.selectButton}>
+            <Text style={styles.selectButtonText}>
+              {isSelectMode ? 'Cancel' : 'Select'}
+            </Text>
+          </TouchableOpacity>
+          {isSelectMode && selectedInvoices.length > 0 && (
+            <TouchableOpacity 
+              onPress={handleMultipleDelivery} 
+              style={styles.deliverButton}
+            >
+              <Text style={styles.deliverButtonText}>
+                Deliver ({selectedInvoices.length})
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {loading ? (
@@ -212,11 +251,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 2.5,
     alignSelf: 'center',
+    marginBottom: 10,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  selectButton: {
+    padding: 8,
+  },
+  selectButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  deliverButton: {
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 5,
+  },
+  deliverButtonText: {
+    color: Color.primeBlue,
+    fontWeight: 'bold',
   },
   contentContainer: {
     padding: 10,
     backgroundColor: Color.white,
-    paddingBottom: 80, // More bottom margin
+    paddingBottom: 80,
   },
   invoiceCard: {
     backgroundColor: '#f9f9f9',
@@ -227,9 +289,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
     shadowRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  selectedInvoice: {
+    backgroundColor: '#e3f2fd',
+    borderColor: Color.primeBlue,
+    borderWidth: 1,
   },
   lastCardMargin: {
-    marginBottom: 55, // Extra bottom margin
+    marginBottom: 55,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -269,16 +338,18 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   failedBadge: {
-    backgroundColor: '#dc3545', // Red color for failed status
+    backgroundColor: '#dc3545',
     paddingHorizontal: 15
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-
-  }
-
+  },
+  invoiceDetails: {
+    flex: 1,
+    marginLeft: 10,
+  },
 });
 
 export default SlidingPopupWithHistory;
