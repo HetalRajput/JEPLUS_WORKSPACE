@@ -10,7 +10,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Platform,
-  Image
+  Image,
+  ActivityIndicator
 } from 'react-native';
 import { Color } from '../../../Constant/Constants';
 import { ApplyLeave } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
@@ -18,7 +19,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { launchImageLibrary } from 'react-native-image-picker';
 
-const LeaveFormScreen = () => {
+const LeaveFormScreen = ({ route }) => {
+  const { remainingLeaves } = route.params || {};
+  console.log("This is remaining leave", remainingLeaves);
+
   // Form states
   const [leaveType, setLeaveType] = useState('EL');
   const [subject, setSubject] = useState('');
@@ -33,6 +37,7 @@ const LeaveFormScreen = () => {
   
   // UI states
   const [showLeaveTypePicker, setShowLeaveTypePicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleApplyLeave = async () => {
     if (!leaveType || !subject || !reason) {
@@ -45,10 +50,11 @@ const LeaveFormScreen = () => {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
       const formData = new FormData();
       
-      // Append all fields with correct field names
       formData.append('leaveType', leaveType);
       formData.append('subject', subject);
       formData.append('reason', reason);
@@ -67,13 +73,15 @@ const LeaveFormScreen = () => {
       console.log('Leave Applied Response:', response);
       Alert.alert("Success", "Leave applied successfully!");
       
-      // Reset form after successful submission
+      // Reset form
       setSubject('');
       setReason('');
       setImage(null);
     } catch (error) {
       console.error('Error applying leave:', error);
       Alert.alert("Error", "Failed to apply leave.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -102,7 +110,7 @@ const LeaveFormScreen = () => {
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+    return date.toLocaleDateString('en-GB');
   };
 
   const onStartDateChange = (event, selectedDate) => {
@@ -119,6 +127,21 @@ const LeaveFormScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Remaining Leaves Display - Read Only */}
+      <View style={styles.remainingLeavesContainer}>
+        <View style={styles.leaveCountBox}>
+          <Text style={styles.leaveCountLabel}>Casual Leave (CL)</Text>
+          <Text style={styles.leaveCountValue}>{remainingLeaves?.[0]?.remainingCL}</Text>
+          <Text style={styles.leaveCountSubtext}>Remaining</Text>
+        </View>
+        
+        <View style={styles.leaveCountBox}>
+          <Text style={styles.leaveCountLabel}>LWP</Text>
+          <Text style={styles.leaveCountValue}>{remainingLeaves?.[0]?.remainingLWP}</Text>
+          <Text style={styles.leaveCountSubtext}>Remaining</Text>
+        </View>
+      </View>
+
       <Text style={styles.header}>Leave Application Form</Text>
       <Text style={styles.subHeader}>Please provide information about your leave.</Text>
 
@@ -246,8 +269,16 @@ const LeaveFormScreen = () => {
       )}
 
       {/* Submit Button */}
-      <TouchableOpacity style={styles.button} onPress={handleApplyLeave}>
-        <Text style={styles.buttonText}>Submit Leave Application</Text>
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={handleApplyLeave}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Submit Leave Application</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -259,6 +290,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     flexGrow: 1,
     paddingBottom: 40,
+  },
+  remainingLeavesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 15,
+  },
+  leaveCountBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  leaveCountLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 5,
+  },
+  leaveCountValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Color.primary,
+  },
+  leaveCountSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   header: {
     fontSize: 22,

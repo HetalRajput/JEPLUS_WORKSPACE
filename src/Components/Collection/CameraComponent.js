@@ -12,25 +12,15 @@ export const CameraComponent = ({ onCapture, onClose }) => {
     try {
       if (cameraRef.current) {
         const photo = await cameraRef.current.takePhoto({
-          qualityPrioritization: 'balanced',
           flash: 'off',
-          skipMetadata: true,
-          enableShutterSound: false,
-          quality: 0.9, // Lower quality to further reduce size
-          maxWidth: 800,
-          maxHeight: 1200,
-          pixelFormat: 'yuv',
         });
-        
-        
-        // Format URI properly for both platforms
+
         const photoUri = Platform.OS === 'android' ? `file://${photo.path}` : photo.path;
-        
         onCapture(photoUri);
         onClose();
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
+      console.error('Error taking photo:', error);
       onClose();
     }
   };
@@ -38,7 +28,7 @@ export const CameraComponent = ({ onCapture, onClose }) => {
   if (!device) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Camera device not available</Text>
+        <Text style={styles.errorText}>No compatible camera device found.</Text>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Icon name="close" size={30} color="white" />
         </TouchableOpacity>
@@ -54,8 +44,6 @@ export const CameraComponent = ({ onCapture, onClose }) => {
         device={device}
         isActive={isActive}
         photo={true}
-        orientation="portrait"
-        photoQualityBalance="balanced" // Balance between quality and performance
       />
       <View style={styles.controls}>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>

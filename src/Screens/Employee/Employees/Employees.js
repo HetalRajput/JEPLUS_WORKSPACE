@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { GetEmployees } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+import { Color } from '../../../Constant/Constants';
 
 const EmployeesScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,7 +112,7 @@ const EmployeesScreen = () => {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color={Color.primeBlue}/>
       </View>
     );
   }

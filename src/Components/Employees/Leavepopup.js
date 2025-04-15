@@ -30,7 +30,7 @@ const LeaveDetailPopup = ({ visible, onClose, leave }) => {
                     <Text style={styles.value}>{leave.applyDate}</Text>
 
                     <Text style={styles.label}>Description:</Text>
-                    <Text style={styles.value}>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</Text>
+                    <Text style={styles.value}>{leave.reason}</Text>
 
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Text style={styles.closeButtonText}>Close</Text>
@@ -45,7 +45,7 @@ const LeaveDetailPopup = ({ visible, onClose, leave }) => {
 const getStatusColor = (status) => {
     switch (status) {
         case 'Approved': return '#4CAF50';  // Green
-        case 'Pending': return '#F9A825';   // Yellow
+        case 'pending': return '#F9A825';   // Yellow
         case 'Rejected': return '#E53935';  // Red
         default: return '#607D8B';          // Grey
     }
