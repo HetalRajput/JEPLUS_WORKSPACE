@@ -7,6 +7,7 @@ import { Color } from '../../Constant/Constants';
 import HomeScreen from '../../Screens/Employee/Home/Home';
 import LeaveScreen from '../../Screens/Employee/Home/Leave';
 import LeaveFormScreen from '../../Screens/Employee/Home/ApplyLeave';
+import LeaveApprovalScreen from '../../Screens/Employee/Home/LeaveApproval';
 import OvertimeScreen from '../../Screens/Employee/Home/Overtime';
 import SalaryScreen from '../../Screens/Employee/Home/Salary';
 
@@ -30,6 +31,7 @@ const HomeStack = () => (
     <Stack.Screen name="HomeMain" component={HomeScreen} />
     <Stack.Screen name="View Leave" component={LeaveScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Apply Leave" component={LeaveFormScreen} options={{ headerShown: true }} />
+    <Stack.Screen name="Leave Approval" component={LeaveApprovalScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Overtime" component={OvertimeScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Attendance" component={AttendanceScreen} options={{ headerShown: true }} />
     <Stack.Screen name="Salary" component={SalaryScreen} options={{ headerShown: true }} />

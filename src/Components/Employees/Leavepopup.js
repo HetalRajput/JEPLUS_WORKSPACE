@@ -45,7 +45,7 @@ const LeaveDetailPopup = ({ visible, onClose, leave }) => {
 const getStatusColor = (status) => {
     switch (status) {
         case 'Approved': return '#4CAF50';  // Green
-        case 'pending': return '#F9A825';   // Yellow
+        case 'Pending': return '#F9A825';   // Yellow
         case 'Rejected': return '#E53935';  // Red
         default: return '#607D8B';          // Grey
     }

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import LeaveDetailPopup from '../../../Components/Employees/Leavepopup';
 import { GetLeave } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
+import { CheakManager } from '../../../Constant/Api/EmployeeApi/Apiendpoint';
 
 const LeaveScreen = ({ navigation }) => {
   const [isPopupVisible, setPopupVisible] = useState(false);
@@ -22,12 +23,20 @@ const LeaveScreen = ({ navigation }) => {
   const [recentApplications, setRecentApplications] = useState([]);
   const [pastApplications, setPastApplications] = useState([]);
   const [remainingLeave, setremainingLeave] = useState([]);
+  const [managerdata, setmanagerdata] = useState([]);
+  const [leaverequest, setleaverequest] = useState("0");
 
   const fetchLeaveData = async () => {
     try {
       setIsLoading(true);
       const response = await GetLeave();
-      console.log(response.data.data.leaveReqs);
+      const managerresponse = await CheakManager();
+      
+      if (managerresponse.success && managerresponse.data) {
+        
+        setleaverequest(managerresponse.data.data.length) 
+        setmanagerdata(managerresponse.data.data);
+      }
       
       if (response.status === 404) {
         console.log("No records found");
@@ -36,23 +45,20 @@ const LeaveScreen = ({ navigation }) => {
         setPastApplications([]);
       } else if (response.success) {
         const data = response.data?.data.leaveReqs || [];
-        console.log(data);
-        
         const Remaining = response.data?.data.remainLeave || [];
         setremainingLeave(Remaining)
-        // Calculate leave summary - FIXED CASE SENSITIVITY
+        
         let approved = 0, pending = 0, rejected = 0;
         data.forEach(item => {
           if (item.leaveStatus === 'Approved') approved++;
-          else if (item.leaveStatus === 'pending') pending++;  // Match API case
+          else if (item.leaveStatus === 'Pending') pending++;
           else if (item.leaveStatus === 'Rejected') rejected++;
         });
   
-        // Rest of your code remains the same...
         const formattedApplications = data.map(item => ({
           id: item.id,
           type: item.leaveType,
-          status: item.leaveStatus, // Use direct value from API
+          status: item.leaveStatus,
           applyDate: formatDate(item.appliedDate),
           date: `${formatDate(item.startDate)} - ${formatDate(item.endDate)}`,
           imageUrl: item.imageUrl,
@@ -60,10 +66,6 @@ const LeaveScreen = ({ navigation }) => {
           reason: item.reason,
         }));
 
-
-
-
-        // Split into recent & past
         const recent = formattedApplications.slice(0, 2);
         const past = formattedApplications.slice(2);
 
@@ -107,7 +109,7 @@ const LeaveScreen = ({ navigation }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Approved': return '#4CAF50';
-      case 'pending': return '#F9A825';
+      case 'Pending': return '#F9A825';
       case 'Rejected': return '#E53935';
       default: return '#607D8B';
     }
@@ -121,6 +123,10 @@ const LeaveScreen = ({ navigation }) => {
   const handleClosePopup = () => {
     setPopupVisible(false);
     setSelectedLeave(null);
+  };
+
+  const handleViewOtherLeaves = () => {
+    navigation.navigate('Leave Approval', { leaveData: managerdata });
   };
 
   const renderItem = ({ item }) => (
@@ -189,11 +195,19 @@ const LeaveScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>Rejected</Text>
           </View>
         </View>
+        {managerdata.length > 0 && (
+                <TouchableOpacity onPress={handleViewOtherLeaves} style={{flexDirection:"row-reverse"}}>
+                  <Text style={styles.viewOtherText}>Leave Request ({leaverequest})</Text>
+                </TouchableOpacity>
+              )}
 
         {/* Recent Applications */}
-        {recentApplications.length > 0 ? (
+        {recentApplications.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Recent Applications</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent Applications</Text>
+
+            </View>
             <FlatList
               data={recentApplications}
               renderItem={renderItem}
@@ -201,12 +215,6 @@ const LeaveScreen = ({ navigation }) => {
               scrollEnabled={false}
             />
           </>
-        ) : (
-          !isLoading && (
-            <View style={styles.emptySection}>
-              <Text style={styles.emptyText}>No recent applications found</Text>
-            </View>
-          )
         )}
 
         {/* Past Applications */}
@@ -249,85 +257,83 @@ const LeaveScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#F4F4F4',
+    backgroundColor: '#f5f5f5',
   },
   container: {
     flex: 1,
-    marginBottom: 50
+    padding: 10,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4F4F4',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#555',
   },
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    padding: 10,
+    marginBottom: 20,
   },
   summaryBox: {
-    width: '48%',
-    height: 80,
-    borderRadius: 12,
-    justifyContent: 'center',
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    marginHorizontal: 4,
   },
   totalBox: {
-    borderColor: '#4A90E2',
+    backgroundColor: '#E3F2FD',
   },
   approvedBox: {
-    borderColor: '#4CAF50',
+    backgroundColor: '#E8F5E9',
   },
   pendingBox: {
-    borderColor: '#F9A825',
+    backgroundColor: '#FFF8E1',
   },
   rejectedBox: {
-    borderColor: '#E53935',
+    backgroundColor: '#FFEBEE',
   },
   summaryCount: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    marginBottom: 4,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#555',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    margin: 10,
+    marginVertical: 12,
     color: '#333',
+  },
+  viewOtherText: {
+    color: '#4A90E2',
+    fontSize: 14,
+    fontWeight: '500',
   },
   card: {
     backgroundColor: '#fff',
-    padding: 15,
-    marginHorizontal: 5,
     borderRadius: 8,
-    marginBottom: 10,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    shadowRadius: 2,
+    marginHorizontal:2
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   leaveType: {
     fontSize: 16,
@@ -341,40 +347,22 @@ const styles = StyleSheet.create({
   leaveDate: {
     fontSize: 14,
     color: '#555',
-    marginVertical: 5,
+    marginBottom: 8,
   },
   description: {
-    fontSize: 12,
-    color: '#777',
-    marginBottom: 10,
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
   },
   statusContainer: {
-    alignItems: 'flex-end',
+    alignSelf: 'flex-end',
   },
   status: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 15,
-    overflow: 'hidden',
-  },
-  applyButton: {
-    position: 'absolute',
-    bottom: 10,
-    left: 20,
-    right: 20,
-    borderRadius: 30,
-    elevation: 5,
-    backgroundColor: '#4A90E2',
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  applyButtonText: {
-    fontSize: 18,
-    color: '#fff',
+    borderRadius: 12,
+    color: 'white',
+    fontSize: 12,
     fontWeight: 'bold',
   },
   emptySection: {
@@ -384,8 +372,20 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#777',
-    textAlign: 'center',
+    color: '#888',
+  },
+  applyButton: {
+    backgroundColor: '#4A90E2',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    margin: 16,
+    marginBottom: 24,
+  },
+  applyButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

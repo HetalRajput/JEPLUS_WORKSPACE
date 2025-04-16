@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { stat } from 'react-native-fs';
 
 
 const BASE_URL="http://jemapps.in"
@@ -189,6 +190,72 @@ export const Employeecheakinout = async (formData) => {
         }
       });
       console.log("this is salary data -->",response.data)
+      return {
+        success: true,
+        status: response.status,
+        data: response, // only the data part
+      };
+  
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return {
+          success: false,
+          status: 404,
+          message: 'No records found',
+        };
+      }
+        
+      return {
+        success: false,
+        status: error.response?.status || 500,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const CheakManager = async () => {
+    const token = await getToken();
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/approve-req`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
+      
+      return {
+        success: true,
+        status: response.status,
+        data: response, // only the data part
+      };
+  
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return {
+          success: false,
+          status: 404,
+          message: 'No records found',
+        };
+      }
+        
+      return {
+        success: false,
+        status: error.response?.status || 500,
+        message: error.message || 'Something went wrong',
+      };
+    }
+  };
+  export const ApprovalLeave = async ({status , id}) => {
+    console.log( "<<????????????",status , id);
+    
+    const token = await getToken();
+  
+    try {
+      const response = await axios.get(`http://jemapps.in/api/employee/update-approve-req/${status}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
+      
       return {
         success: true,
         status: response.status,
