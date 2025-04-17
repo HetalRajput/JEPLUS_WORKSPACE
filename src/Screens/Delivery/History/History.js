@@ -33,6 +33,7 @@ const HistoryScreen = () => {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState(null); // Track the selected payment method for filtering
+console.log(historyData);
 
   const calculateTotals = (data) => {
     return data.reduce(

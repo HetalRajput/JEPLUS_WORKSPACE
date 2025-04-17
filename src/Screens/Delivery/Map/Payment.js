@@ -4,11 +4,9 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
   ScrollView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard
+  ActivityIndicator
 } from "react-native";
 import { Color } from "../../../Constant/Constants";
 import { RadioButton } from "react-native-paper";
@@ -19,36 +17,78 @@ import { PayLaterCard } from "../../../Components/Delivery/Paylatercard";
 import { ApprovalCard } from "../../../Components/Delivery/ApprovalCard";
 
 const CustomerInfoScreen = ({ route, navigation }) => {
-  const { invoice } = route.params;
-  console.log(invoice, "invoice data from route params");
+  const { invoice, isMultiple } = route.params; // Get both params
   
+  console.log("Received invoice data:", invoice); // Debug log
+
   const [selectedPayment, setSelectedPayment] = useState("cash");
   const [isApproved, setIsApproved] = useState(false);
+  const [mergedInvoice, setMergedInvoice] = useState(null);
+
+  useEffect(() => {
+    if (!invoice) return;
+
+    const processInvoices = (invoiceData) => {
+      // Handle both single invoice and array of invoices
+      const invoiceArray = Array.isArray(invoiceData) ? invoiceData : [invoiceData];
+      
+      return {
+        party: invoiceArray[0]?.party || "",
+        address: invoiceArray[0]?.address || "",
+        crlimit: invoiceArray[0]?.crlimit || 0,
+        sman: invoiceArray[0]?.sman || 0,
+        invoices: invoiceArray,
+        amount: invoiceArray.reduce((total, inv) => {
+          const amount = parseFloat(inv.amount) || 0;
+          return total + amount;
+        }, 0),
+        ids: invoiceArray.map(inv => inv.id).join(", "),
+        date: invoiceArray.reduce((earliest, inv) => {
+          const currentDate = new Date(inv.date);
+          return currentDate < new Date(earliest) ? inv.date : earliest;
+        }, invoiceArray[0]?.date || new Date().toISOString()),
+        delStatus: invoiceArray.some(inv => inv.delStatus === "Pending") ? "Pending" : "Delivered",
+        pickedStatus: invoiceArray.some(inv => inv.pickedStatus === "Picked") ? "Picked" : "Not Picked"
+      };
+    };
+
+    setMergedInvoice(processInvoices(invoice));
+  }, [invoice]);
+
 
   const renderPaymentCard = () => {
-  
+    if (!mergedInvoice) return null;
 
     switch (selectedPayment) {
       case "cash":
-        return <CashPayCard item={invoice} navigation={navigation} />;
+        return <CashPayCard item={mergedInvoice} navigation={navigation} />;
       case "upi":
-        return <UpiPayCard item={invoice} navigation={navigation} />;
+        return <UpiPayCard item={mergedInvoice} navigation={navigation} />;
       case "cheque":
-        return <ChequePayCard item={invoice} navigation={navigation} />;
+        return <ChequePayCard item={mergedInvoice} navigation={navigation} />;
       case "paylater":
-        return <PayLaterCard item={invoice} navigation={navigation} />;
+        return <PayLaterCard item={mergedInvoice} navigation={navigation} />;
       case "Approval":
-        return <ApprovalCard item={invoice} navigation={navigation} />;
+        return <ApprovalCard item={mergedInvoice} navigation={navigation} />;
       default:
         return null;
     }
   };
 
+
   useEffect(() => {
-    if (invoice.crlimit === 0 && selectedPayment === "paylater") {
-      setIsApproved(false); // Reset approval status if payment method changes
+    if (mergedInvoice?.crlimit === 0 && selectedPayment === "paylater") {
+      setIsApproved(false);
     }
-  }, [selectedPayment]);
+  }, [selectedPayment, mergedInvoice]);
+
+  if (!mergedInvoice) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Color.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -59,10 +99,15 @@ const CustomerInfoScreen = ({ route, navigation }) => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.mainContainer}>
             <View style={styles.infoContainer}>
-              <Text style={styles.label}>Name: <Text style={styles.value}>{invoice.party}</Text></Text>
-              <Text style={styles.label}>Invoice No: <Text style={styles.value}>{invoice.id}</Text></Text>
-              <Text style={styles.label}>Crlimit: <Text style={styles.value}>{invoice.crlimit}</Text></Text>
-              <Text style={styles.label}>Amount: <Text style={[styles.value, { color: Color.success }]}>₹{invoice.amount}</Text></Text>
+              <Text style={styles.label}>Name: <Text style={styles.value}>{mergedInvoice.party}</Text></Text>
+              <Text style={styles.label}>Invoice No(s): <Text style={styles.value}>{mergedInvoice.ids}</Text></Text>
+              <Text style={styles.label}>Address: <Text style={styles.value}>{mergedInvoice.address}</Text></Text>
+              <Text style={styles.label}>Crlimit: <Text style={styles.value}>{mergedInvoice.crlimit}</Text></Text>
+              <Text style={styles.label}>Total Amount: 
+                <Text style={[styles.value, { color: Color.success }]}>
+                  ₹{mergedInvoice.amount.toFixed(2)}
+                </Text>
+              </Text>
             </View>
 
             <View style={styles.bottomContainer}>
@@ -82,13 +127,13 @@ const CustomerInfoScreen = ({ route, navigation }) => {
                       <RadioButton value="cheque" />
                       <Text style={styles.radioLabel}>Cheque</Text>
                     </View>
-                    {invoice.crlimit > 0 && (
+                    {mergedInvoice.crlimit > 0 && (
                       <View style={styles.radioButton}>
                         <RadioButton value="paylater" />
                         <Text style={styles.radioLabel}>Pay Later</Text>
                       </View>
                     )}
-                      {invoice.crlimit === 0 && (
+                    {mergedInvoice.crlimit === 0 && (
                       <View style={styles.radioButton}>
                         <RadioButton value="Approval" />
                         <Text style={styles.radioLabel}>Approval</Text>
@@ -107,8 +152,6 @@ const CustomerInfoScreen = ({ route, navigation }) => {
     </ScrollView>
   );
 };
-
-export default CustomerInfoScreen;
 
 const styles = StyleSheet.create({
   scrollContainer: {
@@ -168,4 +211,11 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     color: "#333",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
+
+export default CustomerInfoScreen;

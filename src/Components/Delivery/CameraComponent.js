@@ -1,102 +1,89 @@
-import React, { useRef, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { View, TouchableOpacity, Modal, StyleSheet, Platform } from 'react-native';
 import { Camera, useCameraDevice } from 'react-native-vision-camera';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export const CameraComponent = ({ onCapture, onClose }) => {
-  const cameraRef = useRef(null);
+export const CameraComponent = ({ 
+  visible, 
+  onClose, 
+  onPhotoTaken, 
+  photoType 
+}) => {
   const device = useCameraDevice('back');
-  const [isActive, setIsActive] = useState(true);
+  const camera = useRef(null);
 
   const takePhoto = async () => {
-    try {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePhoto({
-          qualityPrioritization: 'balanced',
+    if (camera.current) {
+      try {
+        const photo = await camera.current.takePhoto({
+          qualityPrioritization: 'quality',
           flash: 'off',
-          skipMetadata: true,
           enableShutterSound: false,
-          quality: 1, // Lower quality to further reduce size
-          maxWidth: 800,
-          maxHeight: 1200,
-          pixelFormat: 'yuv',
         });
-        
-        
-        // Format URI properly for both platforms
-        const photoUri = Platform.OS === 'android' ? `file://${photo.path}` : photo.path;
-        
-        onCapture(photoUri);
+
+        const photoPath = Platform.OS === 'ios' ? photo.path : `file://${photo.path}`;
+        onPhotoTaken(photoPath, photoType);
         onClose();
+      } catch (error) {
+        console.error("Error taking photo:", error);
       }
-    } catch (error) {
-      console.error("Error taking photo:", error);
-      onClose();
     }
   };
 
-  if (!device) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Camera device not available</Text>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Icon name="close" size={30} color="white" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (!device) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={isActive}
-        photo={true}
-        orientation="portrait"
-        photoQualityBalance="balanced" // Balance between quality and performance
-      />
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Icon name="close" size={30} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-          <View style={styles.captureButtonInner} />
-        </TouchableOpacity>
+    <Modal visible={visible} animationType="slide" transparent={false}>
+      <View style={styles.cameraWrapper}>
+        <Camera
+          ref={camera}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={visible}
+          photo={true}
+        />
+
+        <View style={styles.cameraControls}>
+          <TouchableOpacity
+            style={styles.cameraCloseButton}
+            onPress={onClose}
+          >
+            <Icon name="close" size={30} color="white" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cameraCaptureButton}
+            onPress={takePhoto}
+          >
+            <View style={styles.captureInnerCircle} />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  errorContainer: {
+  cameraWrapper: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'black',
   },
-  errorText: {
-    color: 'white',
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  controls: {
+  cameraControls: {
     position: 'absolute',
-    bottom: 40,
     width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'space-between',
+    padding: 20,
   },
-  closeButton: {
-    position: 'absolute',
-    left: 20,
+  cameraCloseButton: {
+    alignSelf: 'flex-start',
     backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 10,
-    borderRadius: 50,
+    borderRadius: 20,
+    padding: 5,
   },
-  captureButton: {
+  cameraCaptureButton: {
+    alignSelf: 'center',
+    marginBottom: 40,
     width: 70,
     height: 70,
     borderRadius: 35,
@@ -104,11 +91,12 @@ const styles = StyleSheet.create({
     borderColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  captureInnerCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'white',
   },
 });

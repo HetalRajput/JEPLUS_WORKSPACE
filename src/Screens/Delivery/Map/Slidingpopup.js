@@ -9,6 +9,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Modal
 } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -28,6 +29,9 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [selectedInvoices, setSelectedInvoices] = useState([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  const [showPartyAlert, setShowPartyAlert] = useState(false);
+  const [selectedParty, setSelectedParty] = useState(null);
+  const [showDeliveredAlert, setShowDeliveredAlert] = useState(false);
 
   const fetchSelectedInvoice = async () => {
     try {
@@ -88,10 +92,29 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
     setIsSelectMode(!isSelectMode);
     if (!isSelectMode) {
       setSelectedInvoices([]);
+      setSelectedParty(null);
     }
   };
 
-  const toggleInvoiceSelection = (invoiceId) => {
+  const toggleInvoiceSelection = (invoiceId, isDelivered) => {
+    if (isDelivered) {
+      setShowDeliveredAlert(true);
+      return;
+    }
+    
+    const invoiceToSelect = invoices.find(inv => inv.id === invoiceId);
+    
+    if (selectedInvoices.length === 0) {
+      setSelectedInvoices([invoiceId]);
+      setSelectedParty(invoiceToSelect.party);
+      return;
+    }
+
+    if (invoiceToSelect.party !== selectedParty) {
+      setShowPartyAlert(true);
+      return;
+    }
+
     setSelectedInvoices(prev => {
       if (prev.includes(invoiceId)) {
         return prev.filter(id => id !== invoiceId);
@@ -102,12 +125,18 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
   };
 
   const handleMultipleDelivery = () => {
-    // Implement your multiple delivery logic here
-    console.log('Selected invoices for delivery:', selectedInvoices);
-    // After delivery, you might want to:
-    // setIsSelectMode(false);
-    // setSelectedInvoices([]);
-    // fetchSelectedInvoice(); // Refresh the list
+    const selectedInvoiceObjects = invoices.filter(invoice => 
+      selectedInvoices.includes(invoice.id)
+    );
+
+    navigation.navigate("Payment", { 
+      invoice: selectedInvoiceObjects,
+      isMultiple: true 
+    });
+
+    setIsSelectMode(false);
+    setSelectedInvoices([]);
+    setSelectedParty(null);
   };
 
   const renderInvoice = ({ item, index }) => {
@@ -129,7 +158,7 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
         ]}
         onPress={() => {
           if (isSelectMode) {
-            toggleInvoiceSelection(item.id);
+            toggleInvoiceSelection(item.id, isDelivered);
           } else if (!isCompleted && !isDelivered) {
             navigation.navigate('Payment', { invoice: item });
           }
@@ -139,9 +168,10 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
         {isSelectMode && (
           <Checkbox
             status={isSelected ? 'checked' : 'unchecked'}
-            onPress={() => toggleInvoiceSelection(item.id)}
+            onPress={() => toggleInvoiceSelection(item.id, isDelivered)}
             color={Color.primeBlue}
             uncheckedColor={Color.primeBlue}
+            disabled={isDelivered}
           />
         )}
         <View style={styles.invoiceDetails}>
@@ -167,12 +197,6 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
             <Text style={styles.detailText}>🧾 {item.id}</Text>
           </View>
           <Text style={styles.amountText}>💰 ₹{item.amount}</Text>
-
-          {!isSelectMode && !isCompleted && !isDelivered && item.pickedStatus !== 'Picked' && (
-            <TouchableOpacity style={styles.pickUpButton} onPress={() => handlePickUp(item.id)}>
-              <Text style={styles.buttonText}>🚚 Pick Up</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </TouchableOpacity>
     );
@@ -218,6 +242,51 @@ const SlidingPopupWithHistory = ({ isVisible, navigation, onClose }) => {
           )}
         />
       )}
+
+      <Modal
+        visible={showPartyAlert}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPartyAlert(false)}
+      >
+        <View style={styles.alertContainer}>
+          <View style={styles.alertBox}>
+            <Text style={styles.alertText}>
+              You can only select invoices from the same party.
+            </Text>
+            <Text style={styles.alertSubText}>
+              Currently selected: {selectedParty}
+            </Text>
+            <TouchableOpacity
+              style={styles.alertButton}
+              onPress={() => setShowPartyAlert(false)}
+            >
+              <Text style={styles.alertButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showDeliveredAlert}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDeliveredAlert(false)}
+      >
+        <View style={styles.alertContainer}>
+          <View style={styles.alertBox}>
+            <Text style={styles.alertText}>
+              Delivered invoices cannot be selected.
+            </Text>
+            <TouchableOpacity
+              style={styles.alertButton}
+              onPress={() => setShowDeliveredAlert(false)}
+            >
+              <Text style={styles.alertButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 };
@@ -349,6 +418,42 @@ const styles = StyleSheet.create({
   invoiceDetails: {
     flex: 1,
     marginLeft: 10,
+  },
+  alertContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  alertBox: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  alertText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+    color: Color.primeBlue,
+  },
+  alertSubText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#666',
+  },
+  alertButton: {
+    backgroundColor: Color.primeBlue,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 5,
+  },
+  alertButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

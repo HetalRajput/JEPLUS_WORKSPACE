@@ -21,7 +21,9 @@ import { getCurrentLocation } from "./GetCurrentlocarion";
 import { UndeliveredButton } from "../../Constant/Api/DeliveyPersonaapis/Undeliveredinv";
 
 export const CashPayCard = ({ item, navigation }) => {
-  const [amount, setAmount] = useState(item.amount || "00");
+  // Calculate total amount from all invoices
+  const totalAmount = item.invoices.reduce((sum, invoice) => sum + parseFloat(invoice.amount), 0);
+  const [amount, setAmount] = useState(totalAmount.toString());
   const [invoicePhoto, setInvoicePhoto] = useState(null);
   const [cashPhoto, setCashPhoto] = useState(null);
   const [selectedReason, setSelectedReason] = useState("");
@@ -31,6 +33,13 @@ export const CashPayCard = ({ item, navigation }) => {
   const [showReceivingButton, setShowReceivingButton] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [missingData, setMissingData] = useState("");
+  const [distributedAmounts, setDistributedAmounts] = useState(
+    item.invoices.map(invoice => ({
+      id: invoice.id,
+      amount: invoice.amount,
+      collected: invoice.amount
+    }))
+  );
 
   // Camera state
   const [showCamera, setShowCamera] = useState(false);
@@ -48,67 +57,99 @@ export const CashPayCard = ({ item, navigation }) => {
     checkPermissions();
   }, []);
 
+  const handleAmountChange = (value) => {
+    setAmount(value);
+    const collected = parseFloat(value) || 0;
+    setShowReasons(collected < totalAmount);
+    
+    // Distribute amount proportionally
+    if (collected > 0) {
+      const newDistributedAmounts = distributedAmounts.map(inv => {
+        const ratio = parseFloat(inv.amount) / totalAmount;
+        return {
+          ...inv,
+          collected: (collected * ratio).toFixed(2)
+        };
+      });
+      setDistributedAmounts(newDistributedAmounts);
+    }
+  };
+
   const handlePayment = async () => {
     const missingFields = [];
     if (!amount) missingFields.push("Collected Amount");
-    if (!invoicePhoto) missingFields.push("Cash Photo");
-    if (!cashPhoto) missingFields.push("Invoice Photo");
-
+    if (!invoicePhoto) missingFields.push("Invoice Photo");
+    if (!cashPhoto) missingFields.push("Cash Photo");
+  
     if (missingFields.length > 0) {
-      setMissingData(`Please fill the following data: ${missingFields.join(", ")}`);
+      setMissingData(`Please fill: ${missingFields.join(", ")}`);
       setErrorModalVisible(true);
       return;
     }
-
+  
     setIsLoading(true);
     try {
       const location = await getCurrentLocation();
-
+  
+      // Prepare invoice data array
+      const invoiceData = item.invoices.map(invoice => {
+        const distAmount = distributedAmounts.find(d => d.id === invoice.id);
+        return {
+          Vno: invoice.id,
+          Acno: invoice.acno,
+          TagDt: invoice.date,
+          SMan: invoice.sman,
+          VAmount: invoice.amount,
+          PaidAmount: distAmount?.collected || invoice.amount,
+          PayMethod: "Cash",
+          DelStatus: "Delivered",
+          remarks: selectedReason || "Payment collected",
+          Lat: location.latitude || "0.0",
+          Long: location.longitude || "0.0"
+        };
+      });
+  
+      // Create FormData
       const formData = new FormData();
-      formData.append("Vno", item.id);
-      formData.append("Acno", item.acno);
-      formData.append("TagDt", item.date);
-      formData.append("SMan", item.sman);
-      formData.append("VAmount", item.amount);
-      formData.append("PaidAmount", amount);
-      formData.append("PayMethod", "Cash");
-      formData.append("DelStatus", "Delivered");
-      formData.append("remarks", selectedReason || "All Payment collected successfully");
-      formData.append("Lat", location.latitude || "0.0");
-      formData.append("Long", location.longitude || "0.0");
-
-      if (cashPhoto) {
-        formData.append("image2", {
-          uri: cashPhoto,
-          type: "image/jpeg",
-          name: "cash_payment.jpg",
+      
+      // 1. Add JSON data as plain text
+      formData.append('data', JSON.stringify(invoiceData));
+      
+      // 2. Add images properly
+      const addImage = (uri, fieldName) => {
+        formData.append(fieldName, {
+          uri,
+          type: 'image/jpeg',
+          name: `${fieldName}_${Date.now()}.jpg`
         });
-      }
-
-      if (invoicePhoto) {
-        formData.append("image1", {
-          uri: invoicePhoto,
-          type: "image/jpeg",
-          name: "invoice_payment.jpg",
-        });
-      }
-
-      const response = await Pay(formData);
-
-      if (response.success) {
+      };
+  
+      if (invoicePhoto) addImage(invoicePhoto, 'image1');
+      if (cashPhoto) addImage(cashPhoto, 'image2');
+  
+      // Debug output
+      console.log('FormData contents:', {
+        data: invoiceData,
+        image1: invoicePhoto ? 'exists' : 'none',
+        image2: cashPhoto ? 'exists' : 'none'
+      });
+  
+      // Make API call
+      const response = await Pay(formData)
+  
+      if (response.data.success) {
         setSuccessModal(true);
         resetState();
       } else {
-        alert("Failed to submit payment.");
+        alert(response.message || "Payment failed");
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while processing your request.");
+      console.error("Payment Error:", error);
+      alert(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-
   const takePhoto = async () => {
     if (camera.current) {
       try {
@@ -224,18 +265,42 @@ export const CashPayCard = ({ item, navigation }) => {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer}>
       <View style={styles.card}>
-        <Text style={styles.title}>Cash Payment: ₹{item.amount}</Text>
+        <Text style={styles.title}>Cash Payment: ₹{totalAmount}</Text>
         <Text style={styles.description}>Collect cash from the customer.</Text>
+        <Text style={styles.subtitle}>Invoices to deliver:</Text>
+        
+        {item.invoices.map((invoice, index) => (
+          <View key={invoice.id} style={styles.invoiceItem}>
+            <Text style={styles.invoiceText}>Invoice #{invoice.id}</Text>
+            <Text style={styles.invoiceText}>Amount: ₹{invoice.amount}</Text>
+            {showReasons && (
+              <TextInput
+                style={styles.distributedInput}
+                value={distributedAmounts.find(d => d.id === invoice.id)?.collected || invoice.amount}
+                onChangeText={(value) => {
+                  const newDistributedAmounts = [...distributedAmounts];
+                  const index = newDistributedAmounts.findIndex(d => d.id === invoice.id);
+                  if (index !== -1) {
+                    newDistributedAmounts[index].collected = value;
+                    setDistributedAmounts(newDistributedAmounts);
+                    // Update total amount
+                    setAmount(
+                      newDistributedAmounts.reduce((sum, inv) => sum + parseFloat(inv.collected || 0), 0).toFixed(2)
+                    );
+                  }
+                }}
+                keyboardType="numeric"
+              />
+            )}
+          </View>
+        ))}
 
         <TextInput
           style={styles.input}
-          placeholder="Enter Collected Amount"
+          placeholder="Enter Total Collected Amount"
           keyboardType="numeric"
           value={amount}
-          onChangeText={(value) => {
-            setAmount(value);
-            setShowReasons(value && parseFloat(value) < item.amount);
-          }}
+          onChangeText={handleAmountChange}
         />
 
         {showReasons && (
@@ -320,7 +385,7 @@ export const CashPayCard = ({ item, navigation }) => {
           </>
         )}
 
-        <View style={styles.buttonContainer}>
+<View style={styles.buttonContainer}>
           <View style={styles.undeliveredButton}>
             <UndeliveredButton item={item} navigation={navigation} />
           </View>
@@ -333,7 +398,7 @@ export const CashPayCard = ({ item, navigation }) => {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.buttonText}>Delivered</Text>
+              <Text style={styles.buttonText}>Deliver All</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -344,7 +409,7 @@ export const CashPayCard = ({ item, navigation }) => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Icon name="checkmark-circle" size={50} color={Color.green} />
-            <Text style={styles.modalText}>Payment submitted successfully!</Text>
+            <Text style={styles.modalText}>All invoices submitted successfully!</Text>
             <TouchableOpacity onPress={handleok} style={styles.okButton}>
               <Text style={styles.okButtonText}>OK</Text>
             </TouchableOpacity>
@@ -404,7 +469,59 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
   },
-  
+  scrollContainer: {
+    padding: 16,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: 'gray',
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 16,
+  },
+  distributedInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 8,
+    marginTop: 4,
+    width: '100%',
+  },
+  invoiceItem: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  invoiceText: {
+    fontSize: 14,
+  },
   cameraCloseButton: {
     position: 'absolute',
     top: 50,
